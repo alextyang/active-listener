@@ -1,0 +1,322 @@
+:root {
+  --black: #121212;
+  --white: #ffffff;
+  --grey: #777777;
+
+  --x-margin: 3.2rem;
+  --y-spacing: 2.4rem;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  width: 100vw;
+  overflow-x: visible;
+}
+
+body {
+  background-color: var(--black);
+  color: var(--white);
+
+  font-size: 0.84rem;
+
+  min-height: 100vh;
+  padding-left: 3.2rem;
+  padding-right: 3.2rem;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  z-index: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+
+.player {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  padding-left: var(--x-margin);
+  padding-right: var(--x-margin);
+
+  width: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-top: 1.2rem;
+  padding-bottom: 1.1rem;
+  gap: 3.6rem;
+
+  backdrop-filter: blur(1rem);
+  -webkit-backdrop-filter: blur(1rem);
+
+  z-index: 4;
+
+  * {
+    z-index: 6;
+  }
+
+  .playbackBackground {
+    position: absolute;
+
+    top: 0;
+    left: -24%;
+    right: -24%;
+    bottom: 0;
+
+    z-index: 3;
+    opacity: 0.24;
+  }
+
+
+  .trackInfo {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+    margin-right: 1.2rem;
+
+    .albumCover {
+      position: relative;
+      aspect-ratio: 1;
+      width: 4rem;
+      height: 4rem;
+
+      border-radius: 0.2rem;
+      overflow: hidden;
+
+      .placeholder {
+        width: 100%;
+        height: 100%;
+        background-color: var(--grey);
+        opacity: 0.6;
+      }
+    }
+
+    .infoStack {
+      margin-left: 1rem;
+      display: flex;
+      flex-direction: column;
+      white-space: nowrap;
+      gap: 0.24rem;
+
+      .songTitle {
+        font-weight: 500;
+      }
+
+      .artistNames {
+        font-weight: 500;
+        opacity: .6;
+      }
+    }
+  }
+
+  .timeline {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 36rem;
+
+    .timelineBar {
+      position: relative;
+
+      border-radius: 0.25rem;
+      overflow: hidden;
+
+      background-color: grey;
+      height: 2px;
+      width: 100%;
+    }
+
+    .timelineProgress {
+      background-color: white;
+
+      border-radius: 0.25rem;
+      overflow: hidden;
+      height: 100%;
+
+      position: absolute;
+      left: 0;
+    }
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.8rem;
+
+    .controlButton {
+      background-color: transparent;
+      border: none;
+      color: var(--white);
+      cursor: pointer;
+      height: 36px;
+      width: 36px;
+    }
+
+    .playButton {
+      height: 38px;
+      width: 38px;
+    }
+  }
+
+}
+
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--y-spacing);
+  width: 100%;
+
+  margin: 8rem auto var(--x-margin) auto;
+
+  .subPlayer {
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: top;
+    gap: 1.12rem;
+
+    .spotifyLogo {
+      position: relative;
+      flex-shrink: 0;
+      top: 0.136rem;
+      width: 1.72rem;
+      height: 1.72rem;
+      margin-right: 0.16rem;
+    }
+
+    .genreList {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 1.2rem 1rem;
+      font-size: 0.72rem;
+      white-space: nowrap;
+
+      .genreItem {
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+        border: var(--grey) solid 0.064rem;
+        font-weight: 400;
+      }
+    }
+
+    .controlIcons {
+      position: relative;
+      top: 0.05rem;
+      margin-left: auto;
+
+
+      svg {
+        width: 1.8rem;
+        height: 1.8rem;
+      }
+    }
+
+  }
+
+  .photoCard {
+    position: relative;
+
+    max-width: 72rem;
+    margin-right: auto;
+    margin-left: auto;
+
+    border-radius: 1.8rem;
+
+    mix-blend-mode: initial;
+
+    overflow: hidden;
+
+    padding: 2.6rem 3.2rem;
+
+    &:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+
+      z-index: 4;
+
+      mix-blend-mode: color-dodge;
+
+      border-radius: 1.8rem;
+      border: solid rgb(119, 119, 119, 0.7) 0.2rem;
+      background-clip: border-box;
+
+    }
+
+
+    .photoCardOverlay {
+      position: absolute;
+
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+
+      mix-blend-mode: overlay;
+
+      z-index: -2;
+    }
+
+    .photoCardPhoto {
+      transform: translate3d(0, 0, 0);
+      -ms-transform: translate3d(0, 0, 0);
+      filter: blur(10rem);
+      opacity: 0.4;
+      object-fit: cover;
+      z-index: -3;
+
+    }
+  }
+
+  .articles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--y-spacing);
+
+    .summary {
+      display: flex;
+      flex-direction: column;
+      gap: 1.92rem;
+
+      z-index: 0;
+
+      .summaryIcon {
+        width: 1.8rem;
+        height: 1.8rem;
+
+        position: absolute;
+        top: 1.2rem;
+        right: 1.2rem;
+      }
+
+      p {
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.92rem;
+      }
+    }
+  }
+
+
+}
