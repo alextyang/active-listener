@@ -45,7 +45,7 @@ export default function Home() {
       let newClient = null;
 
       try {
-        newClient = SpotifyApi.withUserAuthorization(CLIENT_ID, REDIRECT_URI, ['user-read-currently-playing', 'user-modify-playback-state'], { redirectionStrategy: new DocumentLocationRedirectionStrategy(router) });
+        newClient = SpotifyApi.withUserAuthorization(CLIENT_ID, REDIRECT_URI, ['user-read-currently-playing', 'user-modify-playback-state', 'user-library-read'], { redirectionStrategy: new DocumentLocationRedirectionStrategy(router) });
       } catch (error) {
         console.log('[AUTH] Spotify client connection failed.');
       }

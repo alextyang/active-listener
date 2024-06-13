@@ -34,7 +34,8 @@ export function Summary({ articles }: { articles: Article[] }) {
 
         getSummary().then(readStream);
 
-    }, [articles, currentTrackInfo?.track]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [articles]);
 
     useEffect(() => {
         if (currentTrackInfo?.track.id === lastTrackID.current) return;

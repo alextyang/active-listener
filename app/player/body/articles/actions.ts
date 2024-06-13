@@ -37,10 +37,15 @@ export async function getArticles(track: Track | undefined): Promise<(Article)[]
 
     const fetchedArticles = await Promise.all(articles.map(fetchArticle));
 
-    const articleTypeOrder = ['track', 'album', 'artist'];
+    const articleRelevanceOrder = ['track', 'album', 'artist'];
+    const articleTypeOrder = ['article', 'wikipedia', 'genius'];
 
     fetchedArticles.sort((a, b) => {
-        return articleTypeOrder.indexOf(a?.relevance ?? 'artist') - articleTypeOrder.indexOf(b?.relevance ?? 'artist');
+        return articleRelevanceOrder.indexOf(a?.relevance ?? 'artist') - articleRelevanceOrder.indexOf(b?.relevance ?? 'artist');
+    });
+
+    fetchedArticles.sort((a, b) => {
+        return articleTypeOrder.indexOf(a?.type ?? 'article') - articleTypeOrder.indexOf(b?.type ?? 'article');
     });
 
     return fetchedArticles;
@@ -131,8 +136,11 @@ async function fetchArticle(protoArticle: Article): Promise<Article> {
     if (protoArticle.link.includes('wikipedia')) {
         article.textContent = article.textContent.split('References[edit]')[0];
         article.content = article.content.split('<span id="References">References</span>')[0];
-        console.log('[ARTICLES] Wikipedia article found:', protoArticle.title);
         articleType = 'wikipedia';
+    }
+
+    if (protoArticle.link.includes('genius.com')) {
+        articleType = 'genius';
     }
 
     return {

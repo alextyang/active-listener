@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { PlaybackContext, TrackContext } from "../../../context";
 import { getArticles } from "./actions";
 import { Article } from "../../../types";
@@ -36,7 +36,7 @@ export function Articles() {
                     else if (article.relevance == 'album') relevanceToken = '⊚ ';
                     else if (article.relevance == 'artist') relevanceToken = '✲ ';
                     return (
-                        <div key={article?.link} className="articleLink">
+                        <div key={article?.link + 'link'} className="articleLink">
                             <PhotoLink article={article}>
                                 {(index == 0) ? (
                                     <div className="articleHeader">
