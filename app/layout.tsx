@@ -6,6 +6,16 @@ const gotham = localFont({
   fallback: ['system-ui'],
   src: [
     {
+      path: './font/Gotham-Thin.otf',
+      weight: '200',
+      style: 'normal',
+    },
+    {
+      path: './font/Gotham-ThinItalic.otf',
+      weight: '200',
+      style: 'italic',
+    },
+    {
       path: './font/Gotham-Light.otf',
       weight: '300',
       style: 'normal',

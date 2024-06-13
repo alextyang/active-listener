@@ -1,5 +1,5 @@
 
-import { CurrentTrackInfoContext } from "@/app/context";
+import { TrackContext, TrackDetailsContext } from "@/app/context";
 import { useContext } from "react";
 
 
@@ -8,8 +8,8 @@ export default function GenreList({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const currentTrackInfo = useContext(CurrentTrackInfoContext);
-    const genres = currentTrackInfo && currentTrackInfo.album.genres.length > 0 ? currentTrackInfo?.album.genres : currentTrackInfo?.artists[0].genres;
+    const currentTrackDetails = useContext(TrackDetailsContext);
+    const genres = currentTrackDetails && currentTrackDetails.album.genres && currentTrackDetails.album.genres.length > 0 ? currentTrackDetails?.album.genres : currentTrackDetails?.artists[0].genres;
 
     return (
         <div className="genreList">

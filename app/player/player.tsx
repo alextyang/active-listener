@@ -1,11 +1,11 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { SpotifyClientContext, CurrentPlaybackContext, CurrentTrackInfoContext } from "../context";
-import { Album, Artist, PlaybackState, Track } from "@spotify/web-api-ts-sdk";
+import { SpotifyClientContext, PlaybackContext, TrackContext, TrackDetailsContext } from "../context";
+import { Album, Artist, AudioFeatures, PlaybackState, Track } from "@spotify/web-api-ts-sdk";
 import { useRouter } from "next/dist/client/components/navigation";
 import Timeline from "./components/timeline";
 import { Articles } from "./body/articles/articles";
 import Controls from "./components/controls";
-import TrackInfo from "./components/songinfo";
+import TrackInfo from "./components/trackInfo";
 import PlaybackBackground from "./components/background";
 import GenreList from "./body/components/genres";
 import ControlIcons from "./body/components/controlIcons";
@@ -19,37 +19,40 @@ export default function PlayerPage() {
     const router = useRouter();
 
 
-
     if (!spotifyClient)
         router.push('/');
 
     // PLAYBACK
     const trackTimeoutID = useRef<NodeJS.Timeout | undefined>(undefined);
     const trackUpdateIntervalID = useRef<NodeJS.Timeout | undefined>(undefined);
-    const [currentTrack, setCurrentTrack] = useState<{ playbackState: PlaybackState } | null>(null);
-    const [currentTrackInfo, setCurrentTrackInfo] = useState<{ track: Track, album: Album, artists: Artist[] } | null>(null);
+    const [playbackInfo, setPlaybackInfo] = useState<{ playbackState: PlaybackState } | null>(null);
+    const [currentTrack, setCurrentTrack] = useState<{ track: Track } | null>(null);
+    const [currentTrackDetails, setCurrentTrackDetails] = useState<{ album: Album, artists: Artist[], features: AudioFeatures } | null>(null);
 
     useEffect(() => {
         const updateTrack = () => {
             if (spotifyClient) {
                 spotifyClient.player.getCurrentlyPlayingTrack().then((playbackState) => {
                     if (!playbackState || !playbackState.item) {
-                        return setCurrentTrack(null);
+                        return setPlaybackInfo(null);
                     }
 
                     clearTimeout(trackTimeoutID.current);
                     trackTimeoutID.current = setTimeout(updateTrack, playbackState.item.duration_ms - playbackState.progress_ms + 10);
 
-                    if (currentTrack && currentTrackInfo && currentTrack.playbackState.item.id === currentTrackInfo.track.id)
-                        return setCurrentTrack({ playbackState: playbackState });
+                    if (playbackInfo && currentTrack && playbackInfo.playbackState.item.id === currentTrack.track.id)
+                        return setPlaybackInfo({ playbackState: playbackState });
 
                     spotifyClient.tracks.get(playbackState.item.id).then((track) => {
-                        spotifyClient.albums.get(track.album.id).then((album) => {
-                            spotifyClient.artists.get(track.artists.map((artist) => artist.id)).then((artists) => {
-                                setCurrentTrack({ playbackState: playbackState });
-                                setCurrentTrackInfo({ album: album, track: track, artists: artists });
-                                console.log('[PLAY] Track details found:', playbackState);
-                            });
+                        setPlaybackInfo({ playbackState: playbackState });
+                        setCurrentTrack({ track: track });
+                        setCurrentTrackDetails(null);
+                        console.log('[PLAY] Track found:', playbackState);
+
+
+                        Promise.all([spotifyClient.albums.get(track.album.id), spotifyClient.artists.get(track.artists.map((artist) => artist.id)), spotifyClient.tracks.audioFeatures(track.id)]).then(([album, artists, features]) => {
+                            setCurrentTrackDetails({ album: album, artists: artists, features: features });
+                            console.log('[PLAY] Track details found:', { album: album, artists: artists, features: features });
                         });
                     });
                 });
@@ -62,27 +65,29 @@ export default function PlayerPage() {
 
         }, UPDATE_INTERVAL);
 
-    }, [currentTrack, currentTrackInfo, spotifyClient]);
+    }, [playbackInfo, currentTrack, spotifyClient]);
 
     return (
-        <CurrentPlaybackContext.Provider value={currentTrack}>
-            <CurrentTrackInfoContext.Provider value={currentTrackInfo}>
-                <div className="player">
-                    <PlaybackBackground />
-                    <TrackInfo></TrackInfo>
-                    <Timeline></Timeline>
-                    <Controls></Controls>
-                </div>
-                <div className='body'>
-                    <div className="subPlayer">
-                        <GenreList>
-                            <SpotifyLogo></SpotifyLogo>
-                        </GenreList>
-                        <ControlIcons></ControlIcons>
+        <PlaybackContext.Provider value={playbackInfo}>
+            <TrackContext.Provider value={currentTrack}>
+                <TrackDetailsContext.Provider value={currentTrackDetails}>
+                    <div className="player">
+                        <PlaybackBackground />
+                        <TrackInfo></TrackInfo>
+                        <Timeline></Timeline>
+                        <Controls></Controls>
                     </div>
-                    <Articles></Articles>
-                </div>
-            </CurrentTrackInfoContext.Provider>
-        </CurrentPlaybackContext.Provider>
+                    <div className='body'>
+                        <div className="subPlayer">
+                            <GenreList>
+                                <SpotifyLogo></SpotifyLogo>
+                            </GenreList>
+                            <ControlIcons></ControlIcons>
+                        </div>
+                        <Articles></Articles>
+                    </div>
+                </TrackDetailsContext.Provider>
+            </TrackContext.Provider>
+        </PlaybackContext.Provider>
     )
 }

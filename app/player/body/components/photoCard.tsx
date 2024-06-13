@@ -1,11 +1,12 @@
-import { CurrentTrackInfoContext } from "@/app/context";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Vibrant from "node-vibrant";
 import { Vec3 } from "node-vibrant/lib/color";
+import Link from "next/link";
+import { Article } from "@/app/types";
 
 
-export default function PhotoCard({
+export function PhotoCard({
     children, src, className
 }: {
     children: React.ReactNode, src?: string, className?: string

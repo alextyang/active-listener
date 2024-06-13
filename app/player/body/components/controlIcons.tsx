@@ -1,19 +1,21 @@
 
-import { CurrentTrackInfoContext, SpotifyClientContext } from "@/app/context";
+import { TrackContext, SpotifyClientContext } from "@/app/context";
 import { useEffect, useContext, useState } from "react";
 
 
 export default function ControlIcons() {
-    const currentTrackInfo = useContext(CurrentTrackInfoContext);
+    const currentTrackInfo = useContext(TrackContext);
     const client = useContext(SpotifyClientContext);
     const [isInLibrary, setIsInLibrary] = useState(false);
 
     useEffect(() => {
-        if (currentTrackInfo)
+        setIsInLibrary(false);
+        if (currentTrackInfo) {
             // Check if track is in library
             client?.currentUser.tracks.hasSavedTracks([currentTrackInfo.track.id]).then((result) => {
                 setIsInLibrary(result[0]);
             });
+        }
     }, [currentTrackInfo, client]);
 
 

@@ -4,5 +4,10 @@ export type Article = {
     content?: string,
     siteName?: string,
     publishedTime?: string,
-    byline?: string
+    byline?: string,
+    image?: string,
+    colorExtracts?: string[],
+    excerpt?: string,
+    type?: string,
+    relevance?: string,
 } | undefined;

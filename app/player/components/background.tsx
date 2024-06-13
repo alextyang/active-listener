@@ -1,4 +1,4 @@
-import { CurrentTrackInfoContext } from "@/app/context";
+import { TrackContext } from "@/app/context";
 import { useContext, useEffect, useState } from "react";
 import Image from "next/image";
 import Vibrant from "node-vibrant";
@@ -6,11 +6,11 @@ import Vibrant from "node-vibrant";
 
 
 export default function PlaybackBackground() {
-    const currentTrackInfo = useContext(CurrentTrackInfoContext);
+    const currentTrackInfo = useContext(TrackContext);
     const [colorExtracts, setColorExtracts] = useState<string[]>(['#333', '#333']);
 
     useEffect(() => {
-        const url = currentTrackInfo?.album.images[0].url;
+        const url = currentTrackInfo?.track.album.images[0].url;
         if (!url) return;
 
         Vibrant.from(url).getPalette().then((palette) => {

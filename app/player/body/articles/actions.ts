@@ -6,6 +6,7 @@ import { Article } from "../../../types";
 import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
 import DOMPurify from "dompurify";
+import Vibrant from "node-vibrant";
 
 export async function getArticles(track: Track | undefined): Promise<(Article)[]> {
     if (!track)
@@ -21,24 +22,28 @@ export async function getArticles(track: Track | undefined): Promise<(Article)[]
     const articles: Article[] = [];
     potentialArticlePromise.forEach((article) => {
         const [artistName, artistSurname] = track.artists[0].name.split(' ');
-        if (article &&
-            (
-                (
-                    (article.title.includes(artistName)
-                        || (artistSurname && artistSurname.trim().length > 1 && article.title.includes(artistSurname)))
-                )
-                || article.title.includes(track.album.name)
-                || article.title.includes(track.name)
-                || article.link.includes('wikipedia')
-            )
-            && article.link) {
-            articles.push({ link: article.link, title: article.title });
+        if (article && article.link) {
+            if (article.title.includes(track.name))
+                articles.push({ link: article.link, title: article.title, relevance: 'track' });
+            else if (article.title.includes(track.album.name))
+                articles.push({ link: article.link, title: article.title, relevance: 'album' });
+            else if ((article.title.includes(artistName)
+                || (artistSurname && artistSurname.trim().length > 1 && article.title.includes(artistSurname))))
+                articles.push({ link: article.link, title: article.title, relevance: 'artist' });
         }
     });
 
     console.log('[ARTICLES] Found ' + potentialArticlePromise.length + ', kept ' + articles.length);
 
-    return Promise.all(articles.map(fetchArticle));
+    const fetchedArticles = await Promise.all(articles.map(fetchArticle));
+
+    const articleTypeOrder = ['track', 'album', 'artist'];
+
+    fetchedArticles.sort((a, b) => {
+        return articleTypeOrder.indexOf(a?.relevance ?? 'artist') - articleTypeOrder.indexOf(b?.relevance ?? 'artist');
+    });
+
+    return fetchedArticles;
 }
 
 async function searchArticles(query: string): Promise<Article[]> {
@@ -63,27 +68,33 @@ async function fetchArticle(protoArticle: Article): Promise<Article> {
 
     let res, html;
 
-    if (protoArticle.link.includes('wikipedia')) {
-        const pageName = protoArticle.link.split('/').pop();
-        if (!pageName)
-            return undefined;
+    try {
+        if (protoArticle.link.includes('wikipedia')) {
+            const pageName = protoArticle.link.split('/').pop();
+            if (!pageName)
+                return undefined;
 
-        const params = new URLSearchParams({
-            action: 'query',
-            prop: 'extracts',
-            titles: pageName,
-            explaintext: 'true',
-            format: 'json'
-        });
-        res = await fetch('https://en.wikipedia.org/w/api.php?' + params, { next: { revalidate: 3600000 } });
-        html = await res.json();
-        html = html.query.pages[Object.keys(html.query.pages)[0]].extract;
+            const params = new URLSearchParams({
+                action: 'query',
+                prop: 'extracts',
+                titles: pageName,
+                explaintext: 'true',
+                format: 'json'
+            });
+            res = await fetch('https://en.wikipedia.org/w/api.php?' + params, { cache: 'force-cache' });
+            html = await res.json();
+            html = html.query.pages[Object.keys(html.query.pages)[0]].extract;
+        }
+        else {
+            res = await fetch(protoArticle.link, { cache: 'force-cache' });
+            html = await res.text();
+        }
 
+    } catch (error) {
+        return undefined;
     }
-    else {
-        res = await fetch(protoArticle.link, { next: { revalidate: 3600000 } });
-        html = await res.text();
-    }
+
+
 
 
     const tempWindow = new JSDOM('html').window;
@@ -96,14 +107,59 @@ async function fetchArticle(protoArticle: Article): Promise<Article> {
     const reader = new Readability(doc, { debug: false });
     const article = reader.parse();
 
+    let articleType = 'article', ogImage = '', extracts: string[] = [];
+
     if (article === null)
         return undefined;
+
+    if (html.includes('og:image')) {
+        const ogImageTag = html.split('og:image')[1].split('content="')[1].split('"')[0];
+        if (ogImageTag)
+            ogImage = ogImageTag;
+
+        let palette;
+        try {
+            palette = await Vibrant.from(ogImage).getPalette();
+        } catch (error) {
+            console.log('[ARTICLES] Error getting palette for ' + protoArticle.title);
+        }
+
+        extracts = [palette?.LightVibrant?.getHex() ?? '#FFF', palette?.LightMuted?.getHex() ?? '#CCC'];
+
+    }
 
     if (protoArticle.link.includes('wikipedia')) {
         article.textContent = article.textContent.split('References[edit]')[0];
         article.content = article.content.split('<span id="References">References</span>')[0];
-        console.log('[ARTICLES] Wikipedia article found:', article.title);
+        console.log('[ARTICLES] Wikipedia article found:', protoArticle.title);
+        articleType = 'wikipedia';
     }
 
-    return { link: protoArticle.link, title: article.title, content: article.textContent, siteName: article.siteName, publishedTime: article.publishedTime, byline: article.byline };
+    return {
+        link: protoArticle.link,
+
+        title: article.title.length > 1 ? article.title : protoArticle.title,
+
+        content: article.textContent.trim(),
+
+        siteName: article.siteName && article.siteName.length > 1 ? article.siteName : (protoArticle.link.split('/')[2].replace('www.', '').split('.')[0].toLocaleUpperCase()),
+
+        publishedTime: article.publishedTime,
+        byline: article.byline?.replace(/[^\w\s]/gi, '').replace('By', '').replace('by', '').replace('Words', '').trim() ?? '',
+
+        type: articleType,
+        excerpt: article.excerpt,
+        image: ogImage,
+        colorExtracts: extracts,
+        relevance: protoArticle.relevance
+    };
+}
+
+function toTitleCase(str: string) {
+    return str.replace(
+        /\w\S*/g,
+        function (txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        }
+    );
 }

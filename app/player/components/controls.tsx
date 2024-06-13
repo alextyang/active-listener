@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
-import { CurrentPlaybackContext, SpotifyClientContext } from '@/app/context';
+import { PlaybackContext, SpotifyClientContext } from '@/app/context';
 
 export default function Controls() {
     const client = useContext(SpotifyClientContext);
-    const playback = useContext(CurrentPlaybackContext);
+    const playback = useContext(PlaybackContext);
 
     const [isPlaying, setIsPlaying] = useState(true);
     const [isDisabled, setIsDisabled] = useState(false);

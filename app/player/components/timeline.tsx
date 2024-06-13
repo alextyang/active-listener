@@ -1,4 +1,4 @@
-import { CurrentPlaybackContext, SpotifyClientContext } from "@/app/context";
+import { PlaybackContext, SpotifyClientContext } from "@/app/context";
 import { useContext, useEffect, useRef, useState } from "react";
 
 const PROGRESS_INTERVAL = 300;
@@ -6,7 +6,7 @@ const PROGRESS_INTERVAL = 300;
 
 export default function Timeline() {
     const spotifyClient = useContext(SpotifyClientContext);
-    const currentTrack = useContext(CurrentPlaybackContext);
+    const currentTrack = useContext(PlaybackContext);
 
     const roundTime = (time: number) => {
         return Math.ceil(time / PROGRESS_INTERVAL) * PROGRESS_INTERVAL;
