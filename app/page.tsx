@@ -14,7 +14,7 @@ import { SpotifyClientContext } from "./context";
 export default function Home() {
 
   // AUTHENTICATION
-  const REDIRECT_URI = "http://localhost:3000/";
+  const REDIRECT_URI = process.env.URL ?? window.location.href;
   const CLIENT_ID = 'b0947280bc0540fcbc59062db29a52c0';
   const OAUTH_URL = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURI(REDIRECT_URI)}&response_type=token`;
 
