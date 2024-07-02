@@ -21,10 +21,13 @@ export function PhotoCard({
     }, [src]);
 
     return (
-        <div className={"photoCard " + className} >
-            <div className="photoCardOverlay" style={{ backgroundColor: `rgb(${colorExtract[0]}, ${colorExtract[1]}, ${colorExtract[2]}, 0.6)` }}></div>
-            <Image className="photoCardPhoto" src={src ?? ''} alt="" fill={true}></Image>
+        <div className={"photoCard " + className} style={{ '--overlay-color': `rgb(${colorExtract[0]}, ${colorExtract[1]}, ${colorExtract[2]}, 0.6)` } as React.CSSProperties}>
             {children}
+
+            <div className="photoCardOverlay" style={{ backgroundColor: `rgb(${colorExtract[0]}, ${colorExtract[1]}, ${colorExtract[2]}, 0.6)` }}>
+            </div>
+            <Image className="photoCardPhoto" src={src ?? ''} alt="" fill={true}></Image>
+
         </div>
     )
 }

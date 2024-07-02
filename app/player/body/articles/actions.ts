@@ -15,40 +15,79 @@ export async function getArticles(track: Track | undefined): Promise<(Article)[]
     console.log('[ARTICLES] Searching for articles for ' + track?.name + ' ' + track?.artists.map((artist) => artist.name).join(' '));
 
     const potentialArticlePromise = await searchArticles(track?.name + ' ' + track?.artists.map((artist) => artist.name).join(' '));
+    const potentialAlbumArticles = await searchArticles(track?.album.name + ' ' + track?.artists.map((artist) => artist.name).join(' '));
+    const potentialArtistArticles = await searchArticles(track?.artists.map((artist) => artist.name).join(' ') + ' interview -wikipedia');
 
-    if (!potentialArticlePromise)
+    const articles = filterArticles(potentialArticlePromise.concat(potentialAlbumArticles).concat(potentialArtistArticles), track);
+
+    if (articles.length === 0) {
+        console.log('[ARTICLES] No articles found');
         return [];
-
-    const articles: Article[] = [];
-    potentialArticlePromise.forEach((article) => {
-        const [artistName, artistSurname] = track.artists[0].name.split(' ');
-        if (article && article.link) {
-            if (article.title.includes(track.name))
-                articles.push({ link: article.link, title: article.title, relevance: 'track' });
-            else if (article.title.includes(track.album.name))
-                articles.push({ link: article.link, title: article.title, relevance: 'album' });
-            else if ((article.title.includes(artistName)
-                || (artistSurname && artistSurname.trim().length > 1 && article.title.includes(artistSurname))))
-                articles.push({ link: article.link, title: article.title, relevance: 'artist' });
-        }
-    });
+    }
 
     console.log('[ARTICLES] Found ' + potentialArticlePromise.length + ', kept ' + articles.length);
 
     const fetchedArticles = await Promise.all(articles.map(fetchArticle));
 
+    const refilteredArticles = filterArticles(fetchedArticles, track);
+
     const articleRelevanceOrder = ['track', 'album', 'artist'];
-    const articleTypeOrder = ['article', 'wikipedia', 'genius'];
 
-    fetchedArticles.sort((a, b) => {
-        return articleRelevanceOrder.indexOf(a?.relevance ?? 'artist') - articleRelevanceOrder.indexOf(b?.relevance ?? 'artist');
+    refilteredArticles.sort((a, b) => {
+        // Put less specific articles at the end
+        let aScore = articleRelevanceOrder.indexOf(a?.relevance ?? 'artist');
+        let bScore = articleRelevanceOrder.indexOf(b?.relevance ?? 'artist');
+
+        // Put hidden articles at the end
+        if (a?.type === 'wikipedia' || a?.type === 'genius')
+            aScore += 100;
+        if (b?.type === 'wikipedia' || b?.type === 'genius')
+            bScore += 100;
+
+        if (aScore === bScore) {
+            // Put articles with the words 'review' or 'interview' at the start of each section
+            if (a?.title.includes('Review') || a?.title.includes('Interview'))
+                aScore -= 0.1;
+            if (b?.title.includes('Review') || b?.title.includes('Interview'))
+                bScore -= 0.1;
+        }
+
+        return aScore - bScore;
     });
 
-    fetchedArticles.sort((a, b) => {
-        return articleTypeOrder.indexOf(a?.type ?? 'article') - articleTypeOrder.indexOf(b?.type ?? 'article');
-    });
 
-    return fetchedArticles;
+    return refilteredArticles;
+}
+
+function filterArticles(articles: Article[], track: Track): Article[] {
+    const filteredArticles: Article[] = [];
+    articles.forEach((article, index) => {
+        const artistNames = track.artists.map((artist) => artist.name.toLowerCase()).map((name) => name.split(' ')).flat();
+        if (article && article.link) {
+            const title = article.title.toLowerCase();
+            let relevance = '';
+            // Ignore video articles
+            if (title.includes('watch') || title.includes('video') || title.includes('tour'))
+                return;
+
+            // Ignore duplicates
+            if (filteredArticles.some((filteredArticle) => filteredArticle?.title === article.title))
+                return;
+
+            if (title.includes(track.name.toLowerCase()))
+                relevance = 'track';
+            else if (title.includes(track.album.name.toLowerCase()))
+                relevance = 'album';
+            else if (artistNames.some((name) => title.includes(name)))
+                relevance = 'artist';
+
+            if (relevance.length > 0)
+                return filteredArticles.push({ ...article, relevance });
+
+            console.log('[ARTICLES] Ignoring ' + article.title);
+        }
+    });
+    return filteredArticles;
 }
 
 async function searchArticles(query: string): Promise<Article[]> {
@@ -99,9 +138,6 @@ async function fetchArticle(protoArticle: Article): Promise<Article> {
         return undefined;
     }
 
-
-
-
     const tempWindow = new JSDOM('html').window;
     const purify = DOMPurify(tempWindow);
 
@@ -118,25 +154,25 @@ async function fetchArticle(protoArticle: Article): Promise<Article> {
         return undefined;
 
     if (html.includes('og:image')) {
-        const ogImageTag = html.split('og:image')[1].split('content="')[1].split('"')[0];
-        if (ogImageTag)
-            ogImage = ogImageTag;
-
         let palette;
         try {
+            const ogImageTag = html.split('og:image')[1].split('content="')[1].split('"')[0];
+            if (ogImageTag && new URL(ogImageTag))
+                ogImage = ogImageTag;
+
             palette = await Vibrant.from(ogImage).getPalette();
         } catch (error) {
-            console.log('[ARTICLES] Error getting palette for ' + protoArticle.title);
+            // console.log('[ARTICLES] Error getting palette for ' + protoArticle.title);
         }
 
         extracts = [palette?.LightVibrant?.getHex() ?? '#FFF', palette?.LightMuted?.getHex() ?? '#CCC'];
-
     }
 
     if (protoArticle.link.includes('wikipedia')) {
         article.textContent = article.textContent.split('References[edit]')[0];
         article.content = article.content.split('<span id="References">References</span>')[0];
         articleType = 'wikipedia';
+        article.siteName = 'Wikipedia';
     }
 
     if (protoArticle.link.includes('genius.com')) {

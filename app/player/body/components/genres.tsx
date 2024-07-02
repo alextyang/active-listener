@@ -1,5 +1,6 @@
 
-import { TrackContext, TrackDetailsContext } from "@/app/context";
+import { TrackContext } from "@/app/context";
+import Link from "next/link";
 import { useContext } from "react";
 
 
@@ -8,17 +9,18 @@ export default function GenreList({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const currentTrackDetails = useContext(TrackDetailsContext);
-    const genres = currentTrackDetails && currentTrackDetails.album.genres && currentTrackDetails.album.genres.length > 0 ? currentTrackDetails?.album.genres : currentTrackDetails?.artists[0].genres;
+    const currentTrackDetails = useContext(TrackContext);
+    const genres = currentTrackDetails?.track?.album?.genres ?? []
+    genres.concat((currentTrackDetails?.artists ? currentTrackDetails?.artists[0].genres : []));
 
     return (
         <div className="genreList">
             {children}
             {genres?.map((genre, index) => {
                 return (
-                    <div key={index} className="genreItem">
+                    <Link key={index} className="genreItem" href={'spotify:search:genre:"' + genre + '"'}>
                         {toTitleCase(genre)}
-                    </div>
+                    </Link>
                 )
             })}
         </div>

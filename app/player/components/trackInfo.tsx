@@ -1,6 +1,8 @@
-import { TrackContext } from "@/app/context";
-import { useContext } from "react";
+import { ActionContext, PlaybackContext, TrackContext } from "@/app/context";
+import { use, useContext } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import ScrollOverflow from "@/app/components/scrollOverflow";
 
 
 export default function TrackInfo() {
@@ -8,17 +10,34 @@ export default function TrackInfo() {
 
     return (
         <div className="trackInfo">
-            <div className="albumCover">
-                {currentTrackInfo?.track.album.name ?
-                    (
-                        <Image src={currentTrackInfo?.track.album.images[0].url} alt={''} fill={true}></Image>
-                    ) :
-                    (<div className="placeholder"></div>)
-                }
-            </div>
+            {currentTrackInfo?.track?.album.name ?
+                (
+                    <div className="albumCover">
+                        <Image src={currentTrackInfo?.track.album.images[0].url} alt={''} fill={true} sizes="10vw" priority></Image>
+                    </div>
+
+                ) :
+                (<div className="albumPlaceholder">
+                </div>)
+            }
             <div className="infoStack">
-                <p className="songTitle">{currentTrackInfo?.track.name}</p>
-                <p className="artistNames">{currentTrackInfo?.track.artists.map((artist) => artist.name).join(', ')}</p>
+                <ScrollOverflow>
+                    <Link href={currentTrackInfo?.track?.uri ?? ''} className="songTitle">{currentTrackInfo?.track?.name}</Link>
+                </ScrollOverflow>
+
+                <ScrollOverflow>
+                    <div className="artistNames">
+                        {currentTrackInfo?.track?.artists.map((artist, index) => {
+                            const separator = index === 0 ? '' : ', ';
+                            return (
+                                <>
+                                    <p key={artist.uri + 'name'} className="artistName">{separator}</p>
+                                    <Link key={artist.uri} href={artist.uri} className="artistName">{artist.name}</Link>
+                                </>
+                            )
+                        })}
+                    </div>
+                </ScrollOverflow>
             </div>
         </div>
     )

@@ -10,7 +10,7 @@ export default function PlaybackBackground() {
     const [colorExtracts, setColorExtracts] = useState<string[]>(['#333', '#333']);
 
     useEffect(() => {
-        const url = currentTrackInfo?.track.album.images[0].url;
+        const url = currentTrackInfo?.track?.album.images[0].url;
         if (!url) return;
 
         Vibrant.from(url).getPalette().then((palette) => {
@@ -19,7 +19,7 @@ export default function PlaybackBackground() {
         });
 
 
-    }, [currentTrackInfo]);
+    }, [currentTrackInfo?.track?.album]);
 
     return (
         <div className="playbackBackground" style={{ background: `linear-gradient(64deg, ${colorExtracts[0]}, ${colorExtracts[1]})` }}>
