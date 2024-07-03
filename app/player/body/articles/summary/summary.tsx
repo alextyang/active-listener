@@ -1,5 +1,5 @@
 import { ReactElement, use, useContext, useEffect, useRef, useState } from "react";
-import { FetchContext, TrackContext } from "../../../../context";
+import { TrackFetchContext, TrackContext } from "../../../../context";
 
 import { Article } from "../../../../types";
 import { StreamableValue, readStreamableValue } from 'ai/rsc';
@@ -15,7 +15,7 @@ const SUMMARY_PARSE_INTERVAL = 100;
 
 export function Summary({ articles }: { articles: Article[] }) {
     const trackContext = useContext(TrackContext);
-    const fetchState = useContext(FetchContext);
+    const fetchState = useContext(TrackFetchContext);
 
     const artistNames = useRef<string[] | undefined>([]);
     const siblingTrackNames = useRef<string[] | undefined>([]);
@@ -44,7 +44,7 @@ export function Summary({ articles }: { articles: Article[] }) {
         parseTimeout.current = undefined;
 
         setSummary('');
-        fetchState.update({ state: 'summary', percent: 0 });
+        fetchState.update({ state: 'summary', percent: -1 });
         const getSummary = createSummary.bind(null, articles, trackContext?.track);
 
         console.log('[SUMMARY] Requesting summary for articles:', articles.map((article) => article?.title).join(', '), trackContext?.track);
@@ -60,7 +60,7 @@ export function Summary({ articles }: { articles: Article[] }) {
                 setSummaryParsed([]);
             }
             isStreaming.current = false;
-            fetchState.update({ state: 'done', percent: 1 });
+            fetchState.update({ state: 'done', percent: -1 });
         };
 
         getSummary().then(readStream);
@@ -128,7 +128,11 @@ export function Summary({ articles }: { articles: Article[] }) {
             };
 
             for (let i = 0; i < workingSummary.length; i++) {
-                if (i == 0 || workingSummary[i - 1] === ' ') {
+                if (i === workingSummary.length - 1) {
+                    nonClueString += workingSummary[i];
+                    pushNonClueString(nonClueString, i + 'summary' + parseID);
+                }
+                else if (i == 0 || workingSummary[i - 1] === ' ') {
                     let hasFoundClue = false;
 
                     if (artistNames.current && trackContext.artists) {
@@ -209,10 +213,6 @@ export function Summary({ articles }: { articles: Article[] }) {
                     }
                     else
                         nonClueString = '';
-                }
-                else if (i === workingSummary.length - 1) {
-                    nonClueString += workingSummary[i];
-                    pushNonClueString(nonClueString, i + 'summary' + parseID);
                 }
                 else if (workingSummary[i] === '\n') {
                     if (workingSummary.length > 1 && workingSummary[i - 1] !== '\n') {

@@ -3,14 +3,14 @@
 import Image from "next/image";
 import styles from "./page.module.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AccessToken, IRedirectionStrategy, IValidateResponses, PlaybackState, SpotifyApi, UserProfile } from "@spotify/web-api-ts-sdk";
+import { AccessToken, IRedirectionStrategy, IValidateResponses, Page, PlaybackState, Playlist, SimplifiedPlaylist, SpotifyApi, UserProfile } from "@spotify/web-api-ts-sdk";
 import { useRouter } from "next/dist/client/components/navigation";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import PlayerPage from "./player/player";
-import { SpotifyClientContext } from "./context";
+import { LibraryFetchContext, LibraryFetchState, PlaylistDict, SpotifyClientContext } from "./context";
 import Footer from "./components/footer";
 
-const SLOW_REQUEST_DELAY = 5 * 1000;
+const SLOW_REQUEST_DELAY = 1 * 1000;
 const REDIRECT_URI = process.env.NODE_ENV == 'production' ? 'https://songbuddy.alexya.ng' : 'http://localhost:3000/';
 const CLIENT_ID = 'b0947280bc0540fcbc59062db29a52c0';
 
@@ -18,7 +18,9 @@ const CLIENT_ID = 'b0947280bc0540fcbc59062db29a52c0';
 export default function Home() {
   const [spotifyClient, setSpotifyClient] = useState<SpotifyApi | undefined>(undefined);
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(undefined);
-  const [playlists, setPlaylists] = useState<UserProfile | undefined>(undefined);
+  const [playlistDict, setPlaylistDict] = useState<PlaylistDict | undefined>({});
+
+  const [libraryFetchState, setLibraryFetchState] = useState<LibraryFetchState>({ state: 'no-library', percent: -1 });
 
   const router = useRouter();
 
@@ -51,22 +53,11 @@ export default function Home() {
       }
     }
 
-    const beforeRequest = (str: string, req: RequestInit) => {
-      // console.log('[SPOTIFY-SDK] Trying request: ', str, req);
-    }
-
-    const afterRequest = (str: string, req: RequestInit, res: Response) => {
-      // res.clone().text().then((data) => {
-      //   // console.log('[SPOTIFY-SDK] Made request: ', str, req, res, data);
-      // });
-      // return;
-    }
-
     // Attempt a Spotify Client login
     let newClient = undefined;
 
     try {
-      newClient = SpotifyApi.withUserAuthorization(CLIENT_ID, REDIRECT_URI, ['user-read-currently-playing', 'user-modify-playback-state', 'user-read-playback-state', 'user-library-read', 'user-read-email', 'playlist-read-private', 'playlist-read-collaborative'], { redirectionStrategy: new DocumentLocationRedirectionStrategy(router), beforeRequest: beforeRequest, afterRequest: afterRequest });
+      newClient = SpotifyApi.withUserAuthorization(CLIENT_ID, REDIRECT_URI, ['user-read-currently-playing', 'user-modify-playback-state', 'user-read-playback-state', 'user-library-read', 'user-read-email', 'playlist-read-private', 'playlist-read-collaborative'], { redirectionStrategy: new DocumentLocationRedirectionStrategy(router) });
     } catch (error) {
       console.log('[AUTH] Spotify client connection failed.');
     }
@@ -80,19 +71,80 @@ export default function Home() {
 
   }, [REDIRECT_URI, logout, router]);
 
-  // Try to login on page load
+
+  // Sync playlists in background
   useEffect(() => {
-    if (spotifyClient === undefined) login();
-  }, [login, spotifyClient]);
+    if (!spotifyClient) return;
+    if (Object.keys(playlistDict ?? {}).length !== 0) return;
+    if (libraryFetchState.state !== 'no-library') return;
+
+    const sync = async () => {
+      if (!spotifyClient) return;
+      if (Object.keys(playlistDict ?? {}).length !== 0) return;
+      if (libraryFetchState.state !== 'no-library') return;
+
+      console.log('[SYNC] Starting library sync...');
+
+      setLibraryFetchState({ state: 'library', percent: -1 });
+      let playlistPage: Page<SimplifiedPlaylist>[] = [await spotifyClient.currentUser.playlists.playlists(50)];
+      const playlists = playlistPage[0].items;
+
+      while (playlistPage[playlistPage.length - 1].next) {
+        console.log('[SYNC] Downloading library list...', playlists);
+
+        await new Promise((resolve) => setTimeout(resolve, SLOW_REQUEST_DELAY));
+        playlistPage.push(await spotifyClient.currentUser.playlists.playlists(50, 50 * playlistPage.length));
+        playlists.push(...playlistPage[playlistPage.length - 1].items);
+      }
+
+      const workingDict: PlaylistDict = {};
+
+      for (const playlist of playlists) {
+        console.log('[SYNC] Syncing playlists...', workingDict);
+
+        const playlistID = playlist.id;
+        setLibraryFetchState({ state: 'playlists', percent: Math.round(playlists.indexOf(playlist) / playlists.length * 100) });
+
+        await new Promise((resolve) => setTimeout(resolve, SLOW_REQUEST_DELAY));
+        const playlistData = await spotifyClient.playlists.getPlaylist(playlistID);
+
+        for (const track of playlistData.tracks.items) {
+          const trackID = track.track.id;
+          if (!trackID) continue;
+
+          if (!workingDict[trackID])
+            workingDict[trackID] = [];
+
+          workingDict[trackID].push(playlistData);
+        }
+
+        setPlaylistDict(workingDict);
+      }
+
+      setPlaylistDict(workingDict);
+      setLibraryFetchState({ state: 'done', percent: -1 });
+    }
+
+    sync();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spotifyClient]);
 
   return (
     <main className={''}>
       {spotifyClient ? (
-        <SpotifyClientContext.Provider value={{ api: spotifyClient, user: userProfile, login: login, logout: logout }}>
+        <SpotifyClientContext.Provider value={{ api: spotifyClient, user: userProfile, login: login, logout: logout, playlistDict: playlistDict }}>
+          <PlayerPage></PlayerPage>
+          <LibraryFetchContext.Provider value={{ state: libraryFetchState, update: setLibraryFetchState }}>
+            <Footer></Footer>
+          </LibraryFetchContext.Provider>
+        </SpotifyClientContext.Provider>
+      ) : (
+        <>
           <PlayerPage></PlayerPage>
           <Footer></Footer>
-        </SpotifyClientContext.Provider>
-      ) : ''}
+        </>
+      )}
     </main>
   );
 }

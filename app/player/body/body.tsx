@@ -1,5 +1,5 @@
 
-import { FetchContext, FetchState } from "@/app/context";
+import { TrackFetchContext, TrackFetchState } from "@/app/context";
 import { Articles } from "./articles/articles";
 import { useContext, useRef, useState } from "react";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import GenreList from "./components/genres";
 import { SpotifyLogoWhite } from "./components/spotifyLogo";
 
 export function Body() {
-    const fetchState = useContext(FetchContext);
+    const fetchState = useContext(TrackFetchContext);
     const message = useRef<string>('');
 
     if (fetchState.state.state === 'no-track')

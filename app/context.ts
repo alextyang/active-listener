@@ -1,9 +1,9 @@
-import { Album, Artist, AudioFeatures, PlaybackState, SpotifyApi, TopTracksResult, Track, TrackItem, UserProfile } from "@spotify/web-api-ts-sdk";
+import { Album, Artist, AudioFeatures, PlaybackState, Playlist, SpotifyApi, TopTracksResult, Track, TrackItem, UserProfile } from "@spotify/web-api-ts-sdk";
 import { Dispatch, SetStateAction, act, createContext } from "react";
 
 
-
-export type SpotifyClientObject = { api: SpotifyApi, user?: UserProfile, login: () => void, logout: () => void } | null;
+export type PlaylistDict = { [key: string]: Playlist[] };
+export type SpotifyClientObject = { api: SpotifyApi, user?: UserProfile, login: () => void, logout: () => void, playlistDict?: PlaylistDict } | null;
 export const SpotifyClientContext = createContext<SpotifyClientObject>(null);
 
 export type PlaybackStateObject = { playbackState?: PlaybackState, queue?: Track[] };
@@ -23,14 +23,26 @@ export const ActionContext = createContext<ActionContextObject>({
 export type TrackContextObject = { track?: Track, album?: Album, artists?: Artist[], features?: AudioFeatures, siblingAlbums?: Album[], topTracks?: TopTracksResult[] } | null;
 export const TrackContext = createContext<TrackContextObject>({});
 
-export const TOTAL_FETCH_STEPS = 3;
-export type FetchState = { state: 'no-track' | 'track' | 'articles' | 'summary' | 'done', percent: number };
-export const FetchContext = createContext<{ state: FetchState, update: Dispatch<SetStateAction<FetchState>> }>({
+export const TOTAL_TRACK_FETCH_STEPS = 3;
+export type TrackFetchState = { state: 'no-track' | 'track' | 'articles' | 'summary' | 'done', percent: number };
+export const TrackFetchContext = createContext<{ state: TrackFetchState, update: Dispatch<SetStateAction<TrackFetchState>> }>({
     state: {
         state: "no-track",
-        percent: 0
+        percent: -1
     },
-    update: function (value: SetStateAction<FetchState>): void {
+    update: function (value: SetStateAction<TrackFetchState>): void {
         throw new Error("Function not implemented.");
+    }
+});
+
+export const TOTAL_LIBRARY_FETCH_STEPS = 2;
+export type LibraryFetchState = { state: 'no-library' | 'library' | 'playlists' | 'done', percent: number };
+export const LibraryFetchContext = createContext<{ state: LibraryFetchState, update: (state: LibraryFetchState) => void }>({
+    update: function (value: LibraryFetchState): void {
+        throw new Error("Function not implemented.");
+    },
+    state: {
+        state: "no-library",
+        percent: -1
     }
 });

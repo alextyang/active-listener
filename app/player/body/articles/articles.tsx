@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { FetchContext, PlaybackContext, TrackContext } from "../../../context";
+import { TrackFetchContext, PlaybackContext, TrackContext } from "../../../context";
 import { getArticles } from "./actions";
 import { Article } from "../../../types";
 import { Summary } from "./summary/summary";
@@ -10,26 +10,31 @@ import Link from "next/link";
 
 export function Articles() {
     const trackContext = useContext(TrackContext);
-    const fetchState = useContext(FetchContext);
+    const fetchState = useContext(TrackFetchContext);
 
     const [articles, setArticles] = useState<Article[]>([]);
     const lastTrackID = useRef<string | undefined>('');
 
     useEffect(() => {
         setArticles([]);
-        fetchState.update({ state: 'articles', percent: 0 });
+        fetchState.update({ state: 'articles', percent: -1 });
         const getArticlesForTrack = getArticles.bind(null, trackContext?.track);
 
         getArticlesForTrack().then((fetchedArticles) => {
             console.log('[ARTICLES] Articles found:', fetchedArticles);
-            setArticles(fetchedArticles);
+
+            if (trackContext?.track?.id === lastTrackID.current)
+                setArticles(fetchedArticles);
+            else
+                return;
 
             if (fetchedArticles.length === 0 || !fetchedArticles)
-                fetchState.update({ state: 'done', percent: 1 });
+                fetchState.update({ state: 'done', percent: -1 });
             else
-                fetchState.update({ state: 'articles', percent: 1 });
+                fetchState.update({ state: 'articles', percent: -1 });
         });
 
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [trackContext?.track]);
 
     useEffect(() => {

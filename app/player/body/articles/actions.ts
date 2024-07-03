@@ -29,11 +29,15 @@ export async function getArticles(track: Track | undefined): Promise<(Article)[]
 
     const fetchedArticles = await Promise.all(articles.map(fetchArticle));
 
-    const refilteredArticles = filterArticles(fetchedArticles, track);
+    const refilteredArticles = sortArticles(filterArticles(fetchedArticles, track));
 
-    const articleRelevanceOrder = ['track', 'album', 'artist'];
 
-    refilteredArticles.sort((a, b) => {
+    return refilteredArticles;
+}
+
+const articleRelevanceOrder = ['track', 'album', 'artist'];
+function sortArticles(articles: Article[]): Article[] {
+    return articles.sort((a, b) => {
         // Put less specific articles at the end
         let aScore = articleRelevanceOrder.indexOf(a?.relevance ?? 'artist');
         let bScore = articleRelevanceOrder.indexOf(b?.relevance ?? 'artist');
@@ -54,9 +58,6 @@ export async function getArticles(track: Track | undefined): Promise<(Article)[]
 
         return aScore - bScore;
     });
-
-
-    return refilteredArticles;
 }
 
 function filterArticles(articles: Article[], track: Track): Article[] {

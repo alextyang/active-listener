@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, act, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { SpotifyClientContext, PlaybackContext, TrackContext, ActionContext, PlaybackStateObject, TrackContextObject, ActionContextObject, FetchContext, FetchState } from "../context";
+import { SpotifyClientContext, PlaybackContext, TrackContext, ActionContext, PlaybackStateObject, TrackContextObject, ActionContextObject, TrackFetchContext, TrackFetchState } from "../context";
 import { Album, Artist, AudioFeatures, Market, Page, PlaybackState, SpotifyApi, TopTracksResult, Track, TrackItem, UserProfile } from "@spotify/web-api-ts-sdk";
 import { useRouter } from "next/dist/client/components/navigation";
 import Timeline from "./components/timeline";
@@ -12,6 +12,7 @@ import ControlIcons from "./body/components/controlIcons";
 import { SpotifyLogoWhite } from "./body/components/spotifyLogo";
 import Link from "next/link";
 import { Body } from "./body/body";
+import SongSearch from "./components/songSearch";
 
 
 const UPDATE_INTERVAL = 600 * 1000;
@@ -23,7 +24,7 @@ export default function PlayerPage() {
     const router = useRouter();
 
     // MONITORING
-    const [fetchState, setFetchState] = useState<FetchState>({ state: 'no-track', percent: 0 });
+    const [fetchState, setFetchState] = useState<TrackFetchState>({ state: 'no-track', percent: -1 });
 
     // PLAYBACK
     const trackTimeoutID = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -74,11 +75,13 @@ export default function PlayerPage() {
     }, [handleVisibilityChange]);
 
     useEffect(() => {
-        const createDelayedPromises = async (promises: (() => Promise<any>)[]) => {
+        const resolveDelayedPromises = async (promises: (Promise<any>)[]) => {
+            const results = [];
             for (const promise of promises) {
-                await promise();
+                results.push(await promise);
                 await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY));
             }
+            return results;
         };
 
         const syncState = async () => {
@@ -116,7 +119,7 @@ export default function PlayerPage() {
             if (playbackState.item.id == fetchedTrackID.current) return console.log('[PLAY] Track already loaded:', playbackState);
             fetchedTrackID.current = playbackState.item.id;
 
-            setFetchState({ state: 'track', percent: 0 });
+            setFetchState({ state: 'track', percent: -1 });
 
             const track = playbackState.item as Track;
             setCurrentTrack({ track: track });
@@ -129,11 +132,13 @@ export default function PlayerPage() {
             setCurrentTrack({ track: track, album: album, artists: artists });
             // console.log('[TRACK] Metadata context found:', album, artists);
 
-            const topTracks = await Promise.all(artists.map((artist) => spotifyClient.api.artists.topTracks(artist.id, spotifyClient.user?.country as Market ?? "US" as Market)));
+            const topTracks = await resolveDelayedPromises(artists.map((artist) => spotifyClient.api.artists.topTracks(artist.id, spotifyClient.user?.country as Market ?? "US" as Market))) as TopTracksResult[];
 
-            const [...siblingSimplifiedAlbumsArray] = await Promise.all(artists.map((artist) => spotifyClient.api.artists.albums(artist.id, 'album', undefined, MAX_ALBUMS)));
+            const [...siblingSimplifiedAlbumsArray] = await resolveDelayedPromises(artists.map((artist) => spotifyClient.api.artists.albums(artist.id, 'album', undefined, MAX_ALBUMS))) as Page<Album>[];
 
             const albumIDs = siblingSimplifiedAlbumsArray.map((albums) => albums.items.map((album) => album.id)).flat();
+
+            // Divide albumIDs into chunks of 20
             const [...albumIDsChunks] = albumIDs.reduce<string[][]>((resultArray, item, index) => {
                 const chunkIndex = Math.floor(index / 20)
 
@@ -146,10 +151,10 @@ export default function PlayerPage() {
                 return resultArray
             }, []);
 
-            const [...siblingAlbums] = await Promise.all(albumIDsChunks.map((albumIDs) => spotifyClient.api.albums.get(albumIDs)));
+            const [...siblingAlbums] = (await resolveDelayedPromises(albumIDsChunks.map((albumIDs) => spotifyClient.api.albums.get(albumIDs))) as Album[][]).flat();
 
-            setCurrentTrack({ track: track, artists: artists, album: album, topTracks: topTracks, siblingAlbums: siblingAlbums.flat() });
-            console.log('[TRACK] Track found:', { track: track, artists: artists, album: album, topTracks: topTracks, siblingAlbums: siblingAlbums.flat() });
+            setCurrentTrack({ track: track, artists: artists, album: album, topTracks: topTracks, siblingAlbums: siblingAlbums });
+            console.log('[TRACK] Track found:', { track: track, artists: artists, album: album, topTracks: topTracks, siblingAlbums: siblingAlbums });
 
             return;
         }
@@ -173,15 +178,19 @@ export default function PlayerPage() {
         <PlaybackContext.Provider value={playbackInfo}>
             <TrackContext.Provider value={currentTrack}>
                 <ActionContext.Provider value={actions}>
-                    <FetchContext.Provider value={{ update: setFetchState, state: fetchState }}>
+                    <TrackFetchContext.Provider value={{ update: setFetchState, state: fetchState }}>
                         <div className="player">
                             <PlaybackBackground />
                             <TrackInfo></TrackInfo>
-                            <Timeline></Timeline>
-                            <Controls></Controls>
+                            {spotifyClient ? (
+                                <><Timeline></Timeline><Controls></Controls></>
+                            ) : (
+                                <SongSearch></SongSearch>
+                            )}
+
                         </div>
                         <Body></Body>
-                    </ FetchContext.Provider>
+                    </ TrackFetchContext.Provider>
                 </ActionContext.Provider>
             </TrackContext.Provider>
         </PlaybackContext.Provider>

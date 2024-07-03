@@ -21,7 +21,14 @@ export default function Controls() {
         setIsDisabled(true);
 
         setIsPlaying(true);
-        await client.api.player.skipToPrevious('');
+        if (playback.playbackState?.device)
+            client.api.player.skipToPrevious(playback.playbackState?.device?.id ?? '');
+        else {
+            client.api.player.getAvailableDevices().then((devices: Devices) => {
+                if (devices.devices.length > 0)
+                    client.api.player.skipToPrevious(devices.devices[0].id ?? '');
+            });
+        }
         setTimeout(() => { actions.setShouldUpdate(true); }, 500);
 
         setTimeout(() => { setIsDisabled(false); }, DISABLED_TIMEOUT);
@@ -32,7 +39,14 @@ export default function Controls() {
         setIsDisabled(true);
 
         setIsPlaying(true);
-        await client.api.player.skipToNext('');
+        if (playback.playbackState?.device)
+            client.api.player.skipToNext(playback.playbackState?.device?.id ?? '');
+        else {
+            client.api.player.getAvailableDevices().then((devices: Devices) => {
+                if (devices.devices.length > 0)
+                    client.api.player.skipToNext(devices.devices[0].id ?? '');
+            });
+        }
         setTimeout(() => { actions.setShouldUpdate(true); }, 500);
 
         setTimeout(() => { setIsDisabled(false); }, DISABLED_TIMEOUT);
