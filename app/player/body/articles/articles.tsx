@@ -1,10 +1,12 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { TrackFetchContext, PlaybackContext, TrackContext } from "../../../context";
-import { getArticles } from "./actions";
+import { fetchArticle, getArticles } from "./actions";
 import { Article } from "../../../types";
 import { Summary } from "./summary/summary";
 import { PhotoLink } from "../components/photoLink";
 import Link from "next/link";
+import { Track } from "@spotify/web-api-ts-sdk";
+import { filterArticles } from "./utils";
 
 
 
@@ -20,18 +22,48 @@ export function Articles() {
         fetchState.update({ state: 'articles', percent: -1 });
         const getArticlesForTrack = getArticles.bind(null, trackContext?.track);
 
-        getArticlesForTrack().then((fetchedArticles) => {
-            console.log('[ARTICLES] Articles found:', fetchedArticles);
+        getArticlesForTrack().then(async (fetchedArticles) => {
+            console.log('[ARTICLES] Article list found:', fetchedArticles);
 
-            if (trackContext?.track?.id === lastTrackID.current)
-                setArticles(fetchedArticles);
-            else
+            if (!trackContext?.track || trackContext?.track?.id !== lastTrackID.current)
                 return;
 
-            if (fetchedArticles.length === 0 || !fetchedArticles)
-                fetchState.update({ state: 'done', percent: -1 });
-            else
-                fetchState.update({ state: 'articles', percent: -1 });
+            let fetchedArticlesCount = 0;
+            const incrementProgress = () => {
+                fetchedArticlesCount++;
+
+                fetchState.update({ state: 'articles', percent: (fetchedArticlesCount * (Math.round(100 / fetchedArticles.length))) });
+
+                console.log('[ARTICLES] Incrementing progress', fetchedArticlesCount * (Math.round(100 / fetchedArticles.length)));
+            };
+
+            const articlePromises = fetchedArticles.map((article) => {
+                const fetchArticleAction = fetchArticle.bind(null, article);
+                return new Promise<Article>(async (resolve) => {
+                    let result: Article | undefined = undefined;
+                    try {
+                        result = await fetchArticleAction();
+
+                    } catch (error) {
+                        result = undefined;
+                    }
+                    incrementProgress();
+                    resolve(result);
+                });
+            });
+
+            const articleResults = await Promise.all(articlePromises);
+
+            if (!trackContext?.track || trackContext?.track?.id !== lastTrackID.current)
+                return;
+
+            const finalArticles = filterArticles(articleResults, trackContext?.track);
+
+            console.log('[ARTICLES] Final articles:', finalArticles);
+
+            setArticles(finalArticles);
+
+            fetchState.update({ state: 'done', percent: -1 });
         });
 
         // eslint-disable-next-line react-hooks/exhaustive-deps

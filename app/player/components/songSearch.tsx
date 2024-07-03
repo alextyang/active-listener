@@ -47,7 +47,7 @@ export default function SongSearch() {
             <div className="searchResults">
                 {results.map((track) => {
                     return (
-                        <Link className="result" key={track.id} href={'/demo/' + track.id}>
+                        <Link className="result" key={track.id} href={'/demo/' + track.id} prefetch={false}>
                             <div className="resultImage">
                                 <Image className="img" src={track.album.images[0].url} alt={track.name} fill sizes="5vw" />
                             </div>

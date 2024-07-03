@@ -34,16 +34,23 @@ export function Body() {
                 </GenreList>
                 <ControlIcons></ControlIcons>
             </div>
-            <Loading message={message.current}></Loading>
+            <Loading message={message.current} percentage={fetchState.state.percent}></Loading>
             <Articles></Articles>
         </div>
     );
 }
 
-function Loading({ message }: { message: string }) {
+function Loading({ message, percentage }: { message: string, percentage: number }) {
     return (
-        <div className={"loading " + (message.length == 0 ? 'hidden' : '')}>
+        <div className={"loading " + (message.length == 0 ? ' hidden ' : '') + (percentage && percentage !== -1 ? ' percentage ' : '')}>
             <div className="loadingText">{message}</div>
+            {
+                percentage && percentage !== -1 ? (
+                    <div className="loadingBar">
+                        <div className="loadingBarFill" style={{ width: percentage + '%' }}></div>
+                    </div>
+                ) : ('')
+            }
         </div>
     );
 }

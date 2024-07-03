@@ -30,7 +30,7 @@ export default function Profile() {
                 </HoverMenu>
             ) : (
                 <div className="profilePlaceholder">
-                    {/* <LoginButton></LoginButton> */}
+                    <LoginButton></LoginButton>
                 </div>
             )}
         </>

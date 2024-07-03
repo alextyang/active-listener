@@ -719,6 +719,8 @@ a {
 
   .loading {
     display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
     align-items: center;
     justify-content: center;
     margin-top: -1.2rem;
@@ -726,6 +728,31 @@ a {
     height: 1rem;
     overflow: hidden;
     transition: height 1s, margin-bottom 1s;
+
+    .loadingBar {
+      position: relative;
+      height: 0.4rem;
+      width: 100%;
+      background-color: var(--grey);
+      border-radius: 0.2rem;
+      opacity: 0.6;
+      width: 60%;
+      overflow: hidden;
+
+      .loadingBarFill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+
+        background-color: var(--white);
+        transition: width 1s;
+      }
+    }
+
+    &.percentage {
+      height: 2.4rem;
+    }
 
     &.hidden {
       height: 0;
