@@ -10,8 +10,7 @@ export default function GenreList({
     children: React.ReactNode;
 }>) {
     const currentTrackDetails = useContext(TrackContext);
-    const genres = currentTrackDetails?.track?.album?.genres ?? []
-    genres.concat((currentTrackDetails?.artists ? currentTrackDetails?.artists[0].genres : []));
+    const genres = (currentTrackDetails?.track?.album?.genres ?? []).concat(currentTrackDetails?.artists?.map((artist) => artist.genres).flat() ?? []);
 
     return (
         <div className="genreList">

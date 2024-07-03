@@ -19,6 +19,8 @@ export function Articles() {
 
     useEffect(() => {
         setArticles([]);
+        if (!trackContext?.track) return;
+
         fetchState.update({ state: 'articles', percent: -1 });
         const getArticlesForTrack = getArticles.bind(null, trackContext?.track);
 
@@ -39,10 +41,10 @@ export function Articles() {
 
             const articlePromises = fetchedArticles.map((article) => {
                 const fetchArticleAction = fetchArticle.bind(null, article);
-                return new Promise<Article>(async (resolve) => {
-                    let result: Article | undefined = undefined;
+                return new Promise<Article>((resolve) => {
+                    let result: Promise<Article> | undefined = undefined;
                     try {
-                        result = await fetchArticleAction();
+                        result = fetchArticleAction();
 
                     } catch (error) {
                         result = undefined;

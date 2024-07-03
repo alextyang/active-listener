@@ -12,9 +12,9 @@ export default function TrackInfo() {
         <div className="trackInfo">
             {currentTrackInfo?.track?.album.name ?
                 (
-                    <div className="albumCover">
+                    <Link className="albumCover" href={currentTrackInfo?.track?.album.uri}>
                         <Image src={currentTrackInfo?.track.album.images[0].url} alt={''} fill={true} sizes="10vw" priority></Image>
-                    </div>
+                    </Link>
 
                 ) :
                 (<div className="albumPlaceholder">

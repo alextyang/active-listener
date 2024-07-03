@@ -370,6 +370,8 @@ a {
       width: 4rem;
       height: 4rem;
 
+      cursor: pointer;
+
       border-radius: 0.2rem;
       overflow: hidden;
     }
