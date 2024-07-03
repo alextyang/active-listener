@@ -61,8 +61,6 @@ body {
   color: var(--white);
 
   font-size: 0.84rem;
-
-
 }
 
 main {
@@ -89,6 +87,20 @@ a {
   &:hover {
     text-decoration: underline;
   }
+}
+
+/* .form-line-active input:focus,
+.form-line-active textarea:focus,
+.form-line-active select:focus {
+  border: 1px solid var(--grey) !important;
+  box-shadow: 0 0 3px var(--grey) !important;
+} */
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline-offset: 0rem !important;
+  outline: solid rgba(255, 255, 255, 0.4) 0.16rem !important;
 }
 
 .loginButton {
@@ -540,8 +552,6 @@ a {
       font-size: 1rem;
       background-color: rgba(172, 172, 172, 0.3);
       color: white;
-      outline-color: var(--dark-grey) !important;
-      -webkit-focus-ring-color: var(--dark-grey) !important;
       border: none !important;
       font-family: unset;
       font-weight: 500;
@@ -725,7 +735,7 @@ a {
     gap: 1.2rem;
     align-items: center;
     justify-content: center;
-    margin-top: -1.2rem;
+    margin-top: 0rem;
     margin-bottom: 0rem;
     height: 1rem;
     overflow: hidden;
@@ -758,7 +768,7 @@ a {
 
     &.hidden {
       height: 0;
-      margin-bottom: -1.2rem;
+      margin-bottom: -2.4rem;
     }
   }
 

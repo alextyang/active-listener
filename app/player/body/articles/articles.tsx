@@ -44,12 +44,19 @@ export function Articles() {
                 return new Promise<Article>((resolve) => {
                     let result: Promise<Article> | undefined = undefined;
                     try {
-                        result = fetchArticleAction();
+                        result = fetchArticleAction().then((fetched) => {
+                            incrementProgress();
+                            return fetched;
+                        });
+
+                        console.log('[ARTICLES] Fetched article:', article?.title);
 
                     } catch (error) {
+                        console.error('[ARTICLES] Error fetching article:', article?.title, error);
+                        incrementProgress();
                         result = undefined;
                     }
-                    incrementProgress();
+
                     resolve(result);
                 });
             });

@@ -49,15 +49,35 @@ export function TrackHoverMenu({ track, children }: { track: Track | SimplifiedT
 
     const [isSuccessful, setIsSuccessful] = useState(false);
 
+    if (!client) return (
+        <HoverMenuLink className="textualHoverMenu albumHoverMenu" href={track.uri} menu={(
+            <>
+                {Object.keys(track).includes('album') ? (
+                    <div className="textualIcon">
+                        <Image src={(track as Track).album.images[0].url} alt='' fill></Image>
+                    </div>
+                ) : (
+                    <div className="textualIcon">
+                        <Image src={currentTrack?.track?.album.images[0].url ?? ''} alt='' fill></Image>
+                    </div>
+                )}
+                <div className="textualIcon" title='Open Album Page'>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#FFFFFF"><path d="M218.87-135.87q-34.48 0-58.74-24.26-24.26-24.26-24.26-58.74v-522.26q0-34.48 24.26-58.74 24.26-24.26 58.74-24.26H480v83H218.87v522.26h522.26V-480h83v261.13q0 34.48-24.26 58.74-24.26 24.26-58.74 24.26H218.87ZM394.41-336 336-394.41l346.72-346.72H576v-83h248.13V-576h-83v-106.72L394.41-336Z" /></svg>
+                </div>
+            </>
+        )}>
+            {children}
+        </HoverMenuLink >
+    );
     return (
         <HoverMenu className="textualHoverMenu trackHoverMenu" onClick={() => {
-            if (currentTrack?.track?.id === track.id) {
+            if (currentTrack?.track?.id === track.id && playback?.playbackState) {
                 if (playback?.playbackState?.is_playing) {
                     client?.api.player.pausePlayback(id);
                 } else {
                     client?.api.player.startResumePlayback(id);
                 }
-            } else {
+            } else if (client) {
                 client?.api.player.addItemToPlaybackQueue(track.uri);
                 setIsSuccessful(true);
             }

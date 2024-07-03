@@ -30,6 +30,8 @@ export default function SongSearch() {
     }
 
     const search = useCallback(() => {
+        if (value.current.trim().length < 1) return setResults([]);
+
         setIsLoading(true);
         const action = searchSongs.bind(null, value.current);
         action().then((tracks) => {
