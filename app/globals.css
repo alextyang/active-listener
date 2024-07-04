@@ -946,6 +946,8 @@ select:focus {
       /* mix-blend-mode: difference; */
       z-index: -10;
 
+      transform: translate3d(0, 0, 0);
+
       .image {
         object-fit: cover;
         background-color: var(--grey);
