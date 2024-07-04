@@ -97,28 +97,32 @@ export function Articles() {
                     else if (article.relevance == 'album') relevanceToken = '⊚ ';
                     else if (article.relevance == 'artist') relevanceToken = '✲ ';
                     return (
-                        <div key={article?.link + 'link'} className="articleLink">
+                        <>
                             {(index == 0) ? (
-                                <PhotoLink article={article} disabled={true}>
-                                    <div className="articleHeader">
-                                        <p><span>✧</span> Track</p>
-                                        <p><span>⊚</span> Album</p>
-                                        <p><span>✲</span> Artist</p>
-                                    </div>
-                                </PhotoLink>
-                            ) : ('')}
-                            <PhotoLink article={article}>
-                                <div className="linkSubtitle">
-                                    <p >{String(index + 1).padStart(2, '0')}
-                                    </p>
-                                    <p>{article.siteName}</p>
+                                <div key={article?.link + 'link'} className="articleLink">
+                                    <PhotoLink article={article} disabled={true}>
+                                        <div className="articleHeader">
+                                            <p><span>✧</span> Track</p>
+                                            <p><span>⊚</span> Album</p>
+                                            <p><span>✲</span> Artist</p>
+                                        </div>
+                                    </PhotoLink>
                                 </div>
-                                <span className="linkIcon">{relevanceToken}</span>
-                                <Link href={article.link}
-                                    target="_blank" className="linkTitle">{article.title}</Link>
-                            </PhotoLink>
+                            ) : ('')}
+                            <div key={article?.link + 'link'} className="articleLink">
+                                <PhotoLink article={article}>
+                                    <div className="linkSubtitle">
+                                        <p >{String(index + 1).padStart(2, '0')}
+                                        </p>
+                                        <p>{article.siteName}</p>
+                                    </div>
+                                    <span className="linkIcon">{relevanceToken}</span>
+                                    <Link href={article.link}
+                                        target="_blank" className="linkTitle">{article.title}</Link>
+                                </PhotoLink>
 
-                        </div>
+                            </div>
+                        </>
                     )
                 })}
             </div>

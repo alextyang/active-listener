@@ -11,6 +11,9 @@
 
   --x-margin: 3.2rem;
   --y-spacing: 2.4rem;
+  --body-max-width: 72rem;
+  --content-gap: 7.2rem;
+
 }
 
 @media (max-width: 48rem) {
@@ -70,8 +73,7 @@ main {
   justify-content: space-between;
 
   min-height: 100vh;
-  padding-left: var(--x-margin);
-  padding-right: var(--x-margin);
+
   padding-bottom: 1.6rem;
 
   z-index: 0;
@@ -717,10 +719,14 @@ select:focus {
 
 
 .body {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--y-spacing);
   width: 100%;
+
+  padding-left: var(--x-margin);
+  padding-right: var(--x-margin);
 
   margin: 8rem auto var(--x-margin) auto;
 
@@ -930,7 +936,7 @@ select:focus {
       position: absolute;
       top: -1.8rem;
       left: -1.6rem;
-      right: -1.6rem;
+      right: -1.4rem;
       bottom: -1.86rem;
 
       border-radius: 1.8rem;
@@ -983,7 +989,6 @@ select:focus {
     flex-direction: column;
     gap: var(--y-spacing);
 
-    max-width: 72rem;
     margin-right: auto;
     margin-left: auto;
 
@@ -995,22 +1000,23 @@ select:focus {
     }
 
     .articles {
-      /* display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
-      gap: var(--y-spacing); */
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(42rem, 1fr));
+      row-gap: 3.6rem;
+      column-gap: 4.8rem;
 
-      padding-left: 3rem;
-      padding-right: 3rem;
-      display: flex;
-      flex-direction: column;
-      gap: 3.6rem;
-      margin-top: 2.4rem;
+      padding-left: 1.6rem;
+      padding-right: 1.6rem;
+
+      margin-top: var(--content-gap);
 
       .photoCard .photoCardOverlay {
         display: none;
       }
 
       .articleLink {
+        position: relative;
 
         a:hover {
           text-decoration: none;
@@ -1022,7 +1028,7 @@ select:focus {
           gap: 1.8rem;
           width: 100%;
 
-          margin-bottom: 3.2rem;
+          /* margin-bottom: 3.2rem; */
 
           color: rgba(45, 45, 45, 0.6);
           pointer-events: none;
@@ -1096,6 +1102,12 @@ select:focus {
         }
       }
 
+      .articleLink:first-child {
+        position: absolute;
+        left: 2rem;
+        top: -4.8rem;
+      }
+
 
 
       .articleCard {
@@ -1126,28 +1138,42 @@ select:focus {
       }
     }
 
+    .summaryIcon {
+      width: 1.8rem;
+      height: 1.8rem;
+
+      position: absolute;
+      top: 1.2rem;
+      right: 1.2rem;
+    }
+
     .summary {
       /* display: flex;
       flex-direction: column;
       gap: 1.92rem; */
+
       width: 100%;
       line-height: 1.92rem;
       z-index: 0;
 
-
-      .summaryIcon {
-        width: 1.8rem;
-        height: 1.8rem;
-
-        position: absolute;
-        top: 1.2rem;
-        right: 1.2rem;
+      @media (min-width: 72rem) {
+        transform: translateX(0);
+        column-count: 2;
+        column-gap: calc(1.92rem * 1.5);
       }
+
 
       p {
         display: inline;
         vertical-align: bottom;
+      }
 
+      .summaryBlock {
+        padding-top: 1.92rem;
+      }
+
+      .summaryBlock:first-child {
+        padding-top: 0;
       }
 
       .hoverMenu {
@@ -1182,6 +1208,9 @@ select:focus {
   align-items: flex-end;
   gap: 1.2rem;
   margin-top: 3.2rem;
+
+  padding-left: var(--x-margin);
+  padding-right: var(--x-margin);
 
 
   .profileCard.hoverMenu {

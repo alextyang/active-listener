@@ -27,7 +27,7 @@ export function PhotoLink({
     // }, [disabled]);
 
     return (
-        <Link href={article?.link ?? ''} target="_blank" className={"photoText " + className} >
+        <Link href={!disabled ? (article?.link ?? '') : ''} target="_blank" className={"photoText " + className} >
             <div
                 className="gradientText"
                 style={{ background: `linear-gradient(${angle}deg, ${article?.colorExtracts?.[0] ?? '#FFF'}, ${article?.colorExtracts?.[1] ?? '#CCC'})` }}
