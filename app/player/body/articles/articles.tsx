@@ -115,6 +115,13 @@ export function Articles() {
                                         <p >{String(index + 1).padStart(2, '0')}
                                         </p>
                                         <p>{article.siteName}</p>
+                                        {article.wordCount ?
+                                            (
+                                                <div className="linkWordCount">
+                                                    <p>{(Math.floor(article.wordCount / 238)) + ':' + Math.floor((article.wordCount % 238) / (238 / 60))} </p>
+
+                                                </div>
+                                            ) : ''}
                                     </div>
                                     <span className="linkIcon">{relevanceToken}</span>
                                     <Link href={article.link}

@@ -131,6 +131,7 @@ export async function fetchArticle(protoArticle: Article): Promise<Article> {
         title: article.title.length > 1 ? article.title : protoArticle.title,
 
         content: article.textContent.trim(),
+        wordCount: article.textContent.split(' ').length,
 
         siteName: article.siteName && article.siteName.length > 1 ? article.siteName : (protoArticle.link.split('/')[2].replace('www.', '').split('.')[0].toLocaleUpperCase()),
 

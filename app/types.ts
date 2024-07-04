@@ -10,4 +10,5 @@ export type Article = {
     excerpt?: string,
     type?: string,
     relevance?: string,
+    wordCount?: number
 } | undefined;

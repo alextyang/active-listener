@@ -7,7 +7,7 @@
   --dark-grey-material-selected: #505050;
   --green: #1db954;
 
-  --hover-delay: 0.2s;
+  --hover-delay: 0.16s;
 
   --x-margin: 3.2rem;
   --y-spacing: 2.4rem;
@@ -804,7 +804,7 @@ select:focus {
         border: var(--grey) solid 0.064rem;
         font-weight: 400;
         cursor: pointer;
-        transition: background-color var(--hover-delay), color var(--hover-delay), border-color var(--hover-delay);
+        transition: background-color var(--hover-delay) ease-in-out, color var(--hover-delay) ease-in-out, border-color var(--hover-delay) ease-in-out;
 
         &:hover {
           border-color: white;
@@ -943,7 +943,6 @@ select:focus {
 
       overflow: hidden;
       pointer-events: none;
-      transition: opacity var(--hover-delay);
       /* mix-blend-mode: difference; */
       z-index: -10;
 
@@ -952,6 +951,8 @@ select:focus {
         background-color: var(--grey);
         filter: blur(0.01rem);
         opacity: 0;
+        transition: opacity var(--hover-delay) ease-in-out;
+
       }
 
       .placeholder {
@@ -964,6 +965,8 @@ select:focus {
         opacity: 0;
 
         background-color: var(--dark-grey);
+        transition: opacity var(--hover-delay) ease-in-out;
+
       }
     }
 
@@ -1010,6 +1013,11 @@ select:focus {
       padding-right: 1.6rem;
 
       margin-top: var(--content-gap);
+
+      @media screen and (max-width: 48rem) {
+        display: flex;
+        flex-direction: column;
+      }
 
       .photoCard .photoCardOverlay {
         display: none;
@@ -1064,6 +1072,13 @@ select:focus {
             display: inline-block;
             text-align: center;
           }
+
+          .linkWordCount {
+            margin-left: auto;
+            margin-right: 0.86rem
+          }
+
+
         }
 
 
