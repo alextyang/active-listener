@@ -71,14 +71,14 @@ export function TrackHoverMenu({ track, children }: { track: Track | SimplifiedT
     );
     return (
         <HoverMenu className="textualHoverMenu trackHoverMenu" onClick={() => {
-            if (currentTrack?.track?.id === track.id && playback?.playbackState) {
+            if (client.api && currentTrack?.track?.id === track.id && playback?.playbackState) {
                 if (playback?.playbackState?.is_playing) {
-                    client?.api.player.pausePlayback(id);
+                    client.api.player.pausePlayback(id);
                 } else {
-                    client?.api.player.startResumePlayback(id);
+                    client.api.player.startResumePlayback(id);
                 }
-            } else if (client) {
-                client?.api.player.addItemToPlaybackQueue(track.uri);
+            } else if (client.api) {
+                client.api.player.addItemToPlaybackQueue(track.uri);
                 setIsSuccessful(true);
             }
         }} menu={(

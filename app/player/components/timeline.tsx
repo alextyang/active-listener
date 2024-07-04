@@ -41,7 +41,7 @@ export default function Timeline() {
     }
 
     const handleMouseClick = async (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!spotifyClient || !playbackContext?.playbackState) return;
+        if (!spotifyClient.api || !playbackContext?.playbackState) return;
 
         const duration = playbackContext.playbackState.item.duration_ms;
         const newProgress = Math.round(manualProgress * duration);

@@ -118,7 +118,7 @@ export function Articles() {
                                         {article.wordCount ?
                                             (
                                                 <div className="linkWordCount">
-                                                    <p>{(Math.floor(article.wordCount / 238)) + ':' + Math.floor((article.wordCount % 238) / (238 / 60))} </p>
+                                                    <p>{(Math.floor(article.wordCount / 238)) + ':' + (Math.floor((article.wordCount % 238) / (238 / 60)).toString().padStart(2, '0'))} </p>
 
                                                 </div>
                                             ) : ''}

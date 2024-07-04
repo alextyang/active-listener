@@ -9,7 +9,7 @@ export async function searchSongs(query: string): Promise<Track[]> {
 
     const results = await serverClient.search(query, ['track'], 'US', 8);
 
-    console.log('[DEMO-SEARCH] Searching for ' + query + ': ' + results.tracks.items.length + ' results found.');
+    // console.log('[DEMO-SEARCH] Searching for ' + query + ': ' + results.tracks.items.length + ' results found.');
     return results.tracks.items;
 }
 

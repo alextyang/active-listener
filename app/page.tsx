@@ -9,6 +9,7 @@ import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.share
 import PlayerPage from "./player/player";
 import { LibraryFetchContext, LibraryFetchState, PlaylistDict, SpotifyClientContext } from "./context";
 import Footer from "./components/footer";
+import Intro from "./intro/intro";
 
 const SLOW_REQUEST_DELAY = 1 * 1000;
 const REDIRECT_URI = process.env.NODE_ENV == 'production' ? 'https://songbuddy.alexya.ng' : 'http://localhost:3000/';
@@ -140,10 +141,10 @@ export default function Home() {
           </LibraryFetchContext.Provider>
         </SpotifyClientContext.Provider>
       ) : (
-        <>
-          <PlayerPage></PlayerPage>
+        <SpotifyClientContext.Provider value={{ api: spotifyClient, user: userProfile, login: login, logout: logout, playlistDict: playlistDict }}>
+          <Intro />
           <Footer></Footer>
-        </>
+        </SpotifyClientContext.Provider>
       )}
     </main>
   );

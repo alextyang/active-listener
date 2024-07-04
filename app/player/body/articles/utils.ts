@@ -53,6 +53,14 @@ function sortArticles(articles: Article[]): Article[] {
                 aScore -= 0.1;
             if (b?.title.includes('Review') || b?.title.includes('Interview'))
                 bScore -= 0.1;
+
+            if (a?.wordCount && b?.wordCount) {
+                if (a?.wordCount > b?.wordCount)
+                    aScore -= 0.1;
+                else if (a?.wordCount < b?.wordCount)
+                    bScore -= 0.1;
+            }
+
         }
 
         return aScore - bScore;

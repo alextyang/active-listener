@@ -3,7 +3,7 @@ import { SpotifyClientContext } from "../context";
 import { SpotifyLogoWhite } from "../player/body/components/spotifyLogo";
 
 
-export default function LoginButton() {
+export default function LoginButton({ message = 'Login to Spotify' }: { message?: string }) {
     const client = useContext(SpotifyClientContext);
 
     const handleLogin = () => {
@@ -14,7 +14,7 @@ export default function LoginButton() {
 
         <div className="loginButton" onClick={handleLogin}>
             <SpotifyLogoWhite></SpotifyLogoWhite>
-            <p>Login to Spotify</p>
+            <p>{message}</p>
         </div>
 
     )

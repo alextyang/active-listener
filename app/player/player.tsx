@@ -39,7 +39,7 @@ export default function PlayerPage() {
 
 
     const togglePlayback = useCallback(async (shouldPlay: boolean) => {
-        if (!spotifyClient) return;
+        if (!spotifyClient.api) return;
         const id = playbackInfo?.playbackState?.device?.id ?? '';
 
         if (!shouldPlay) {
@@ -52,7 +52,7 @@ export default function PlayerPage() {
     }, [playbackInfo, spotifyClient]);
 
     const setProgress = useCallback((percent: number) => {
-        if (!spotifyClient) return;
+        if (!spotifyClient.api) return;
         const id = playbackInfo?.playbackState?.device?.id ?? '';
         const duration = playbackInfo?.playbackState?.item.duration_ms ?? 0;
 
@@ -75,7 +75,7 @@ export default function PlayerPage() {
     }, [handleVisibilityChange]);
 
     useEffect(() => {
-        const resolveDelayedPromises = async (promises: (Promise<any>)[]) => {
+        const resolveDelayedPromises = async (promises: (Promise<any> | undefined)[]) => {
             const results = [];
             for (const promise of promises) {
                 results.push(await promise);
@@ -85,7 +85,7 @@ export default function PlayerPage() {
         };
 
         const syncState = async () => {
-            if (!spotifyClient || !shouldUpdate) return;
+            if (!spotifyClient.api || !shouldUpdate) return;
             if (document.hidden) return;
 
             clearTimeout(trackTimeoutID.current);
@@ -115,7 +115,7 @@ export default function PlayerPage() {
         }
 
         const updateTrack = async (playbackState: PlaybackState) => {
-            if (!spotifyClient) return;
+            if (!spotifyClient.api) return;
             if (playbackState.item.id == fetchedTrackID.current) return console.log('[PLAY] Track already loaded:', playbackState);
             fetchedTrackID.current = playbackState.item.id;
 
@@ -132,9 +132,9 @@ export default function PlayerPage() {
             setCurrentTrack({ track: track, album: album, artists: artists });
             // console.log('[TRACK] Metadata context found:', album, artists);
 
-            const topTracks = await resolveDelayedPromises(artists.map((artist) => spotifyClient.api.artists.topTracks(artist.id, spotifyClient.user?.country as Market ?? "US" as Market))) as TopTracksResult[];
+            const topTracks = await resolveDelayedPromises(artists.map((artist) => spotifyClient.api?.artists.topTracks(artist.id, spotifyClient.user?.country as Market ?? "US" as Market))) as TopTracksResult[];
 
-            const [...siblingSimplifiedAlbumsArray] = await resolveDelayedPromises(artists.map((artist) => spotifyClient.api.artists.albums(artist.id, 'album', undefined, MAX_ALBUMS))) as Page<Album>[];
+            const [...siblingSimplifiedAlbumsArray] = await resolveDelayedPromises(artists.map((artist) => spotifyClient.api?.artists.albums(artist.id, 'album', undefined, MAX_ALBUMS))) as Page<Album>[];
 
             const albumIDs = siblingSimplifiedAlbumsArray.map((albums) => albums.items.map((album) => album.id)).flat();
 
@@ -151,7 +151,7 @@ export default function PlayerPage() {
                 return resultArray
             }, []);
 
-            const [...siblingAlbums] = (await resolveDelayedPromises(albumIDsChunks.map((albumIDs) => spotifyClient.api.albums.get(albumIDs))) as Album[][]).flat();
+            const [...siblingAlbums] = (await resolveDelayedPromises(albumIDsChunks.map((albumIDs) => spotifyClient.api?.albums.get(albumIDs))) as Album[][]).flat();
 
             setCurrentTrack({ track: track, artists: artists, album: album, topTracks: topTracks, siblingAlbums: siblingAlbums });
             console.log('[TRACK] Track found:', { track: track, artists: artists, album: album, topTracks: topTracks, siblingAlbums: siblingAlbums });

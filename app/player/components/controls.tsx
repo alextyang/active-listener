@@ -17,7 +17,7 @@ export default function Controls() {
     }, [playback?.playbackState?.is_playing]);
 
     const skipToPrevious = async () => {
-        if (isDisabled || !client) return;
+        if (isDisabled || !client.api) return;
         setIsDisabled(true);
 
         setIsPlaying(true);
@@ -26,7 +26,7 @@ export default function Controls() {
         else {
             client.api.player.getAvailableDevices().then((devices: Devices) => {
                 if (devices.devices.length > 0)
-                    client.api.player.skipToPrevious(devices.devices[0].id ?? '');
+                    client.api?.player.skipToPrevious(devices.devices[0].id ?? '');
             });
         }
         setTimeout(() => { actions.setShouldUpdate(true); }, 500);
@@ -35,7 +35,7 @@ export default function Controls() {
     };
 
     const skipToNext = async () => {
-        if (isDisabled || !client) return;
+        if (isDisabled || !client.api) return;
         setIsDisabled(true);
 
         setIsPlaying(true);
@@ -44,7 +44,7 @@ export default function Controls() {
         else {
             client.api.player.getAvailableDevices().then((devices: Devices) => {
                 if (devices.devices.length > 0)
-                    client.api.player.skipToNext(devices.devices[0].id ?? '');
+                    client.api?.player.skipToNext(devices.devices[0].id ?? '');
             });
         }
         setTimeout(() => { actions.setShouldUpdate(true); }, 500);
@@ -53,7 +53,7 @@ export default function Controls() {
     };
 
     const togglePlay = () => {
-        if (isDisabled || !client) return;
+        if (isDisabled || !client.api) return;
 
         if (isPlaying) {
             setIsPlaying(false);
@@ -69,7 +69,7 @@ export default function Controls() {
             else {
                 client.api.player.getAvailableDevices().then((devices: Devices) => {
                     if (devices.devices.length > 0)
-                        client.api.player.startResumePlayback(devices.devices[0].id ?? '');
+                        client.api?.player.startResumePlayback(devices.devices[0].id ?? '');
                 });
             }
         }

@@ -5,10 +5,12 @@ import { HoverMenu } from "./hoverMenu";
 import Image from "next/image";
 import Link from "next/link";
 import LoginButton from "./loginButton";
+import { usePathname } from "next/navigation";
 
 
 export default function Profile() {
     const client = useContext(SpotifyClientContext);
+    const path = usePathname();
 
     const logout = () => {
         if (!client) return;
@@ -29,9 +31,10 @@ export default function Profile() {
                     <Image className="profileImage" src={client?.user.images[client?.user.images.length - 1].url} alt="Profile Picture" fill />
                 </HoverMenu>
             ) : (
-                <div className="profilePlaceholder">
-                    <LoginButton></LoginButton>
-                </div>
+                !path.includes('/demo') ? <></> :
+                    <div className="profilePlaceholder">
+                        <LoginButton></LoginButton>
+                    </div>
             )}
         </>
     )

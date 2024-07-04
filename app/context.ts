@@ -3,8 +3,15 @@ import { Dispatch, SetStateAction, act, createContext } from "react";
 
 
 export type PlaylistDict = { [key: string]: Playlist[] };
-export type SpotifyClientObject = { api: SpotifyApi, user?: UserProfile, login: () => void, logout: () => void, playlistDict?: PlaylistDict } | null;
-export const SpotifyClientContext = createContext<SpotifyClientObject>(null);
+export type SpotifyClientObject = { api?: SpotifyApi, user?: UserProfile, login: () => void, logout: () => void, playlistDict?: PlaylistDict };
+export const SpotifyClientContext = createContext<SpotifyClientObject>({
+    login: function (): void {
+        throw new Error("Function not implemented.");
+    },
+    logout: function (): void {
+        throw new Error("Function not implemented.");
+    }
+});
 
 export type PlaybackStateObject = { playbackState?: PlaybackState, queue?: Track[] };
 export const PlaybackContext = createContext<PlaybackStateObject>({});
