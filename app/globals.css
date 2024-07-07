@@ -1410,7 +1410,7 @@ select:focus {
       transition: transform var(--hover-delay) ease-in-out;
 
       &:hover {
-        /* transform: scale(1.15); */
+        transform: scale(1.15);
       }
     }
 

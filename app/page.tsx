@@ -12,7 +12,7 @@ import Footer from "./components/footer";
 import Intro from "./intro/intro";
 
 const SLOW_REQUEST_DELAY = 1 * 1000;
-const REDIRECT_URI = process.env.NODE_ENV == 'production' ? 'https://songbuddy.alexya.ng' : 'http://localhost:3000/';
+const REDIRECT_URI = process.env.NODE_ENV == 'production' ? 'https://activelistener.alexya.ng' : 'http://localhost:3000/';
 const CLIENT_ID = 'b0947280bc0540fcbc59062db29a52c0';
 
 
