@@ -420,7 +420,7 @@ select:focus {
         opacity: .6;
         display: inline;
 
-        p {
+        * {
           display: inline;
         }
       }
