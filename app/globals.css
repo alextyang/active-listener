@@ -420,7 +420,7 @@ select:focus {
         opacity: .6;
         display: inline;
 
-        * {
+        .artistName {
           display: inline;
         }
       }
@@ -897,7 +897,7 @@ select:focus {
       background-color: var(--overlay-color);
       transition: background-color 1s;
 
-      transform: translate3d(0, 0, 100rem);
+      transform: translate3d(0, 0, 999rem);
       transition: transform 999999s;
 
       background-clip: border-box;
@@ -925,9 +925,19 @@ select:focus {
 
   .photoCard:hover {
     .photoCardOverlay {
-      transform: translate3d(0, 0, 1rem);
+      transform: translate3d(0, 0, 0rem);
     }
   }
+
+  &:hover {
+    .photoCard {
+      .photoCardOverlay {
+        transform: translate3d(0, 0, -999rem);
+      }
+    }
+  }
+
+
 
 
   .photoText {
