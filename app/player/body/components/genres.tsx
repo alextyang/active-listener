@@ -11,11 +11,13 @@ export default function GenreList({
 }>) {
     const currentTrackDetails = useContext(TrackContext);
     const genres = (currentTrackDetails?.track?.album?.genres ?? []).concat(currentTrackDetails?.artists?.map((artist) => artist.genres).flat() ?? []);
+    // Remove duplicates
+    const uniqueGenres = Array.from(new Set(genres));
 
     return (
         <div className="genreList">
             {children}
-            {genres?.map((genre, index) => {
+            {uniqueGenres?.map((genre, index) => {
                 return (
                     <Link key={index} className="genreItem" href={'spotify:search:genre:"' + genre + '"'}>
                         {toTitleCase(genre)}
