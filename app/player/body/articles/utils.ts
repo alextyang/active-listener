@@ -2,11 +2,10 @@ import { Article } from "@/app/types";
 import { Track } from "@spotify/web-api-ts-sdk";
 
 
-
+const MINIMUM_WORD_COUNT = 60;
 export function filterArticles(articles: Article[], track: Track): Article[] {
-    const uniqueArticles = Array.from(new Set(articles));
     const filteredArticles: Article[] = [];
-    uniqueArticles.forEach((article, index) => {
+    articles.forEach((article, index) => {
         const artistNames = track.artists.map((artist) => artist.name.toLowerCase()).map((name) => name.split(' ')).flat();
         if (article && article.link) {
             const title = article.title.toLowerCase();
@@ -15,8 +14,12 @@ export function filterArticles(articles: Article[], track: Track): Article[] {
             if (title.includes('watch') || title.includes('video') || title.includes('tour'))
                 return;
 
+            // Ignore articles with too few words
+            if (article.wordCount && article.wordCount < MINIMUM_WORD_COUNT)
+                return;
+
             // Ignore duplicates
-            if (filteredArticles.some((filteredArticle) => filteredArticle?.title === article.title))
+            if (filteredArticles.some((filteredArticle) => filteredArticle?.title === article.title) || filteredArticles.some((filteredArticle) => filteredArticle?.link === article.link))
                 return;
 
             if (title.includes(track.name.toLowerCase()))
