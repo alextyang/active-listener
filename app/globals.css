@@ -419,10 +419,10 @@ select:focus {
         font-weight: 500;
         opacity: .6;
         display: inline;
+      }
 
-        .artistName {
-          display: inline;
-        }
+      .artistName {
+        display: inline;
       }
     }
   }
