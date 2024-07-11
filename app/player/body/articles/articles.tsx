@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { TrackFetchContext, PlaybackContext, TrackContext } from "../../../context";
+import { ProgressContext, PlaybackContext, TrackContext } from "../../../context";
 import { fetchArticle, getArticles } from "./actions";
 import { Article } from "../../../types";
 import { Summary } from "./summary/summary";
@@ -12,7 +12,7 @@ import { filterArticles } from "./utils";
 
 export function Articles() {
     const trackContext = useContext(TrackContext);
-    const fetchState = useContext(TrackFetchContext);
+    const fetchState = useContext(ProgressContext);
 
     const [articles, setArticles] = useState<Article[]>([]);
     const lastTrackID = useRef<string | undefined>('');

@@ -1,12 +1,12 @@
 import { ReactElement, ReactNode, use, useContext, useEffect, useRef, useState } from "react";
-import { TrackFetchContext, TrackContext } from "../../../../context";
+import { ProgressContext, TrackContext } from "../../../../context";
 
 import { Article } from "../../../../types";
 import { StreamableValue, readStreamableValue } from 'ai/rsc';
 import { createSummary } from "./actions";
 import { PhotoCard } from "../../components/photoCard";
 import { HoverMenu } from "@/app/components/hoverMenu";
-import { AlbumHoverMenu, ArticleHoverMenu, ArtistHoverMenu, TrackHoverMenu } from "./components/TextualHoverMenu";
+import { ArtistHoverMenu, TrackHoverMenu, AlbumHoverMenu, ArticleHoverMenu } from "@/app/components/textualHoverMenu";
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -15,7 +15,7 @@ const SUMMARY_PARSE_INTERVAL = 100;
 
 export function Summary({ articles }: { articles: Article[] }) {
     const trackContext = useContext(TrackContext);
-    const fetchState = useContext(TrackFetchContext);
+    const fetchState = useContext(ProgressContext);
 
     const artistNames = useRef<string[] | undefined>([]);
     const siblingTrackNames = useRef<string[] | undefined>([]);

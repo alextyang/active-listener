@@ -30,14 +30,17 @@ export const ActionContext = createContext<ActionContextObject>({
 export type TrackContextObject = { track?: Track, album?: Album, artists?: Artist[], features?: AudioFeatures, siblingAlbums?: Album[], topTracks?: TopTracksResult[] } | null;
 export const TrackContext = createContext<TrackContextObject>({});
 
+
 export const TOTAL_TRACK_FETCH_STEPS = 3;
-export type TrackFetchState = { state: 'no-track' | 'track' | 'articles' | 'summary' | 'done', percent: number };
-export const TrackFetchContext = createContext<{ state: TrackFetchState, update: Dispatch<SetStateAction<TrackFetchState>> }>({
+export type ProgressState = { state: 'no-track' | 'track' | 'articles' | 'summary' | 'done', percent: number };
+export const progressMessages = { 'no-track': '', 'track': 'Getting track information...', 'articles': 'Finding reviews for track...', 'summary': 'Generating summary...', 'done': '' };
+export type ProgressContextObject = { state: ProgressState, update: Dispatch<SetStateAction<ProgressState>> };
+export const ProgressContext = createContext<ProgressContextObject>({
     state: {
         state: "no-track",
         percent: -1
     },
-    update: function (value: SetStateAction<TrackFetchState>): void {
+    update: function (value: SetStateAction<ProgressState>): void {
         throw new Error("Function not implemented.");
     }
 });

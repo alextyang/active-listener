@@ -15,10 +15,16 @@ export async function getArticles(track: Track | undefined): Promise<(Article)[]
 
     console.log('[ARTICLES] Searching for articles for ' + track?.name + ' ' + track?.artists.map((artist) => artist.name).join(' '));
 
+    // Search for track
     const potentialArticlePromise = searchArticles(track?.name + ' ' + track?.artists.map((artist) => artist.name).join(' '));
-    const potentialAlbumArticles = searchArticles(track?.album.name + ' ' + track?.artists.map((artist) => artist.name).join(' '));
+
+    // Search for album if track isn't a single or title track
+    const potentialAlbumArticles = (track?.album.name.toLowerCase().includes(track.name.toLowerCase())) ? searchArticles(track?.album.name + ' ' + track?.artists.map((artist) => artist.name).join(' ')) : undefined;
+
+    // Search for artist interview
     const potentialArtistArticles = searchArticles(track?.artists.map((artist) => artist.name).join(' ') + ' interview -wikipedia');
     const joinedResults = (await Promise.all([potentialArticlePromise, potentialAlbumArticles, potentialArtistArticles])).flat();
+
 
     const articles = filterArticles(joinedResults, track);
 
@@ -28,6 +34,7 @@ export async function getArticles(track: Track | undefined): Promise<(Article)[]
     }
 
     console.log('[ARTICLES] Found ' + joinedResults.length + ', kept ' + articles.length);
+
     return articles;
 
 }

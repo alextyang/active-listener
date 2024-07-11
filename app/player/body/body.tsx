@@ -1,5 +1,5 @@
 
-import { TrackFetchContext, TrackFetchState } from "@/app/context";
+import { ProgressContext, progressMessages, ProgressState } from "@/app/context";
 import { Articles } from "./articles/articles";
 import { useContext, useRef, useState } from "react";
 import Link from "next/link";
@@ -8,23 +8,7 @@ import GenreList from "./components/genres";
 import { SpotifyLogoWhite } from "./components/spotifyLogo";
 
 export function Body() {
-    const fetchState = useContext(TrackFetchContext);
-    const message = useRef<string>('');
-
-    if (fetchState.state.state === 'no-track')
-        message.current = '';
-
-    else if (fetchState.state.state === 'track')
-        message.current = ('Getting track information...');
-
-    else if (fetchState.state.state === 'articles')
-        message.current = ('Finding reviews for track...');
-
-    else if (fetchState.state.state === 'summary')
-        message.current = 'Generating summary...';
-
-    else if (fetchState.state.state === 'done')
-        message.current = '';
+    const fetchState = useContext(ProgressContext);
 
     return (
         <div className='body'>
@@ -34,13 +18,16 @@ export function Body() {
                 </GenreList>
                 <ControlIcons></ControlIcons>
             </div>
-            <Loading message={message.current} percentage={fetchState.state.percent}></Loading>
+            <Loading state={fetchState.state}></Loading>
             <Articles></Articles>
         </div>
     );
 }
 
-function Loading({ message, percentage }: { message: string, percentage: number }) {
+function Loading({ state }: { state: ProgressState }) {
+    const message = progressMessages[state.state];
+    const percentage = state.percent;
+
     return (
         <div className={"loading " + (message.length == 0 ? ' hidden ' : '') + (percentage && percentage !== -1 ? ' percentage ' : '')}>
             <div className="loadingText">{message}</div>

@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, act, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { SpotifyClientContext, PlaybackContext, TrackContext, ActionContext, PlaybackStateObject, TrackContextObject, ActionContextObject, TrackFetchContext, TrackFetchState } from "../context";
+import { SpotifyClientContext, PlaybackContext, TrackContext, ActionContext, PlaybackStateObject, TrackContextObject, ActionContextObject, ProgressContext, ProgressState } from "../context";
 import { Album, Artist, AudioFeatures, Market, Page, PlaybackState, SpotifyApi, TopTracksResult, Track, TrackItem, UserProfile } from "@spotify/web-api-ts-sdk";
 import { useRouter } from "next/dist/client/components/navigation";
 import Timeline from "./components/timeline";
@@ -13,6 +13,7 @@ import { SpotifyLogoWhite } from "./body/components/spotifyLogo";
 import Link from "next/link";
 import { Body } from "./body/body";
 import SongSearch from "./components/songSearch";
+import Script from "next/dist/client/script";
 
 
 const UPDATE_INTERVAL = 600 * 1000;
@@ -24,7 +25,7 @@ export default function PlayerPage() {
     const router = useRouter();
 
     // MONITORING
-    const [fetchState, setFetchState] = useState<TrackFetchState>({ state: 'no-track', percent: -1 });
+    const [fetchState, setFetchState] = useState<ProgressState>({ state: 'no-track', percent: -1 });
 
     // PLAYBACK
     const trackTimeoutID = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -178,7 +179,7 @@ export default function PlayerPage() {
         <PlaybackContext.Provider value={playbackInfo}>
             <TrackContext.Provider value={currentTrack}>
                 <ActionContext.Provider value={actions}>
-                    <TrackFetchContext.Provider value={{ update: setFetchState, state: fetchState }}>
+                    <ProgressContext.Provider value={{ update: setFetchState, state: fetchState }}>
                         <div className="player">
                             <PlaybackBackground />
                             <TrackInfo></TrackInfo>
@@ -187,10 +188,9 @@ export default function PlayerPage() {
                             ) : (
                                 <SongSearch></SongSearch>
                             )}
-
                         </div>
                         <Body></Body>
-                    </ TrackFetchContext.Provider>
+                    </ ProgressContext.Provider>
                 </ActionContext.Provider>
             </TrackContext.Provider>
         </PlaybackContext.Provider>
