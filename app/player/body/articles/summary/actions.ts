@@ -39,7 +39,7 @@ export async function createSummary(articles: Article[], track?: Track) {
 
     (async () => {
         const { textStream } = await streamText({
-            model: openai('gpt-3.5-turbo-0125'),
+            model: openai('gpt-4o-mini'),
             system: systemPrompt,
             prompt,
             maxTokens: maxTokensOut

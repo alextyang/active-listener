@@ -49,8 +49,8 @@ const gotham = localFont({
 })
 
 export const metadata: Metadata = {
-  title: "Behind the Song",
-  description: "Listening companion for Spotify.",
+  title: "Active Listener",
+  description: "A listening companion for Spotify, summarizing reviews and interviews for the music you love.",
 };
 
 export default function RootLayout({
