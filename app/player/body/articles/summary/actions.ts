@@ -9,7 +9,7 @@ import { createStreamableValue } from 'ai/rsc';
 const maxTokensIn = 6400;
 const maxTokensOut = 3200;
 const systemPrompt = `
-You will be given unformatted articles potentially about a provided song, its artist, and its album. Summarize the articles as they explain the specifics of the song's background, musicology, and reception.
+You will be given unformatted articles about a provided song, its artist, and its album. Summarize the articles as they explain the specifics of the song's background, musicology, and reception. If they don't contain any relevant information, discuss the artist only.
 
 \n\nFormat your answer into paragraphs describing: concept, musicality, and reviews. Reference the articles' site name when relevant. Use a neutral, concise tone.
 

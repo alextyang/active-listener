@@ -297,17 +297,17 @@ select:focus {
     }
 
     &.articleHoverMenu {
-      justify-content: end;
-
       .menu {
-        left: -0.8rem;
+        left: -2.5rem;
         top: -0.6rem;
         bottom: -0.6rem;
-        right: -2.4rem;
-        padding: 0.3rem 0.4rem 0.3rem 0.3rem;
+        right: -2.5rem;
+        padding: 0.3rem 0.5rem 0.3rem 0.3rem;
 
-        .textualIcon {
-          margin-left: auto;
+        img {
+          border-radius: 1.5rem;
+          overflow: hidden;
+          background-color: var(--white);
         }
 
         svg {
