@@ -6,6 +6,7 @@ import Link from "next/link";
 import ControlIcons from "./components/controlIcons";
 import GenreList from "./components/genres";
 import { SpotifyLogoWhite } from "./components/spotifyLogo";
+import Lyrics from "./lyrics/lyrics";
 
 export function Body() {
     const fetchState = useContext(ProgressContext);
@@ -19,10 +20,12 @@ export function Body() {
                 <ControlIcons></ControlIcons>
             </div>
             <Loading state={fetchState.state}></Loading>
+            <Lyrics></Lyrics>
             <Articles></Articles>
         </div>
     );
 }
+
 
 function Loading({ state }: { state: ProgressState }) {
     const message = progressMessages[state.state];

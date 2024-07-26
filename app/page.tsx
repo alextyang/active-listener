@@ -10,7 +10,7 @@ import PlayerPage from "./player/player";
 import { LibraryFetchContext, LibraryFetchState, PlaylistDict, SpotifyClientContext } from "./context";
 import Footer from "./components/footer";
 import Intro from "./intro/intro";
-import LyricsTest from "./player/body/lyrics/lyricsTest";
+import LyricsTest from "./player/body/lyrics/lyrics";
 
 const SLOW_REQUEST_DELAY = 1 * 1000;
 const REDIRECT_URI = process.env.NODE_ENV == 'production' ? 'https://activelistener.alexya.ng/' : 'http://localhost:3000/';
