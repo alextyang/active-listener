@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 export default function Lyrics() {
 
-    const geniusEmbed = 'http://genius.com/songs/378195/embed.js';
+    const geniusEmbed = 'https://genius.com/songs/378195/embed.js';
     const [embedHTML, setEmbedHTML] = useState<string | undefined>(undefined);
 
     useEffect(() => {
