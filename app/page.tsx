@@ -7,12 +7,14 @@ import { AccessToken, IRedirectionStrategy, IValidateResponses, Page, PlaybackSt
 import { useRouter } from "next/dist/client/components/navigation";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import PlayerPage from "./player/player";
-import { LibraryFetchContext, LibraryFetchState, PlaylistDict, SpotifyClientContext } from "./context";
+import { LibraryFetchContext, LibraryFetchState, PlaylistContext, PlaylistTrackDict, PlaylistIDDict, SpotifyClientContext } from "./context";
 import Footer from "./components/footer";
 import Intro from "./intro/intro";
 import LyricsTest from "./player/body/lyrics/lyrics";
+import { loadUsersPlaylists, saveUsersPlaylists } from "./storage";
 
-const SLOW_REQUEST_DELAY = 1 * 1000;
+const SLOW_REQUEST_DELAY = 1 * 100;
+const MAX_PLAYLISTS = 1000;
 const REDIRECT_URI = process.env.NODE_ENV == 'production' ? 'https://activelistener.alexya.ng/' : 'http://localhost:3000/';
 const CLIENT_ID = 'b0947280bc0540fcbc59062db29a52c0';
 
@@ -20,7 +22,8 @@ const CLIENT_ID = 'b0947280bc0540fcbc59062db29a52c0';
 export default function Home() {
   const [spotifyClient, setSpotifyClient] = useState<SpotifyApi | undefined>(undefined);
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(undefined);
-  const [playlistDict, setPlaylistDict] = useState<PlaylistDict | undefined>({});
+  const [playlistTrackDict, setPlaylistTrackDict] = useState<PlaylistTrackDict | undefined>({});
+  const [playlistIDDict, setPlaylistIDDict] = useState<PlaylistIDDict | undefined>({});
 
   const [libraryFetchState, setLibraryFetchState] = useState<LibraryFetchState>({ state: 'no-library', percent: -1 });
 
@@ -74,16 +77,27 @@ export default function Home() {
   }, [REDIRECT_URI, logout, router]);
 
 
-  // Sync playlists in background
+  // Download playlists in background
   useEffect(() => {
-    if (!spotifyClient) return;
-    if (Object.keys(playlistDict ?? {}).length !== 0) return;
+    if (!spotifyClient || !userProfile) return;
+    if (Object.keys(playlistIDDict ?? {}).length !== 0) return;
     if (libraryFetchState.state !== 'no-library') return;
 
     const sync = async () => {
-      if (!spotifyClient) return;
-      if (Object.keys(playlistDict ?? {}).length !== 0) return;
+      if (!spotifyClient || !userProfile) return;
+      if (Object.keys(playlistIDDict ?? {}).length !== 0) return;
       if (libraryFetchState.state !== 'no-library') return;
+
+
+      const cachedPlaylistDict = await loadUsersPlaylists(userProfile.id);
+      console.log('[SYNC] Loaded playlist dict:', cachedPlaylistDict);
+
+      if (cachedPlaylistDict) {
+        setPlaylistTrackDict(cachedPlaylistDict.playlistTrackDict);
+        setPlaylistIDDict(cachedPlaylistDict.playlistIDDict);
+        setLibraryFetchState({ state: 'done', percent: -1 });
+        return; // TODO update based on snapshot age
+      }
 
       console.log('[SYNC] Starting library sync...');
 
@@ -99,31 +113,42 @@ export default function Home() {
         playlists.push(...playlistPage[playlistPage.length - 1].items);
       }
 
-      const workingDict: PlaylistDict = {};
+      const workingIDDict: PlaylistIDDict = {};
+      const workingTrackDict: PlaylistTrackDict = {};
+
+      if (playlists.length > MAX_PLAYLISTS) {
+        console.log('[SYNC] Too many playlists to sync, only syncing first ' + MAX_PLAYLISTS + ' playlists.');
+        playlists.splice(MAX_PLAYLISTS, playlists.length - MAX_PLAYLISTS);
+      }
 
       for (const playlist of playlists) {
-        console.log('[SYNC] Syncing playlists...', workingDict);
+        console.log('[SYNC] Syncing playlists (' + playlists.indexOf(playlist) + ' / ' + playlists.length + ')', playlist);
 
         const playlistID = playlist.id;
+        workingIDDict[playlistID] = playlist;
         setLibraryFetchState({ state: 'playlists', percent: Math.round(playlists.indexOf(playlist) / playlists.length * 100) });
 
         await new Promise((resolve) => setTimeout(resolve, SLOW_REQUEST_DELAY));
         const playlistData = await spotifyClient.playlists.getPlaylist(playlistID);
 
         for (const track of playlistData.tracks.items) {
+          if (!track || !track.track) continue;
           const trackID = track.track.id;
           if (!trackID) continue;
 
-          if (!workingDict[trackID])
-            workingDict[trackID] = [];
+          if (!workingTrackDict[trackID])
+            workingTrackDict[trackID] = [];
 
-          workingDict[trackID].push(playlistData);
+          workingTrackDict[trackID].push(playlistData.id);
         }
 
-        setPlaylistDict(workingDict);
+        setPlaylistTrackDict(workingTrackDict);
+        setPlaylistIDDict(workingIDDict);
       }
 
-      setPlaylistDict(workingDict);
+      setPlaylistTrackDict(workingTrackDict);
+      setPlaylistIDDict(workingIDDict);
+      saveUsersPlaylists(userProfile.id, workingTrackDict, workingIDDict);
       setLibraryFetchState({ state: 'done', percent: -1 });
     }
 
@@ -135,14 +160,16 @@ export default function Home() {
   return (
     <main className={''}>
       {spotifyClient ? (
-        <SpotifyClientContext.Provider value={{ api: spotifyClient, user: userProfile, login: login, logout: logout, playlistDict: playlistDict }}>
-          <PlayerPage></PlayerPage>
-          <LibraryFetchContext.Provider value={{ state: libraryFetchState, update: setLibraryFetchState }}>
-            <Footer></Footer>
-          </LibraryFetchContext.Provider>
+        <SpotifyClientContext.Provider value={{ api: spotifyClient, user: userProfile, login: login, logout: logout }}>
+          <PlaylistContext.Provider value={{ playlistIDDict: playlistIDDict, playlistTrackDict: playlistTrackDict }}>
+            <PlayerPage></PlayerPage>
+            <LibraryFetchContext.Provider value={{ state: libraryFetchState, update: setLibraryFetchState }}>
+              <Footer></Footer>
+            </LibraryFetchContext.Provider>
+          </PlaylistContext.Provider>
         </SpotifyClientContext.Provider>
       ) : (
-        <SpotifyClientContext.Provider value={{ api: spotifyClient, user: userProfile, login: login, logout: logout, playlistDict: playlistDict }}>
+        <SpotifyClientContext.Provider value={{ api: spotifyClient, user: userProfile, login: login, logout: logout }}>
           <Intro />
           <Footer></Footer>
 

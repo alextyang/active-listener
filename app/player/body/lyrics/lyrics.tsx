@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 export default function Lyrics() {
+    return;
 
     const geniusEmbed = 'https://genius.com/songs/378195/embed.js';
     const [embedHTML, setEmbedHTML] = useState<string | undefined>(undefined);
@@ -33,7 +34,6 @@ export default function Lyrics() {
 
     return (
         <div style={{ position: 'relative' }}>
-            {/* eslint-disable-next-line @next/next/no-sync-scripts */}
             {/* <script src="https://code.jquery.com/jquery-1.7.2.min.js" integrity="sha256-R7aNzoy2gFrVs+pNJ6+SokH04ppcEqJ0yFLkNGoFALQ=" crossOrigin="anonymous"></script>
             <div id='rg_embed_link_378195' className='rg_embed_link' data-song-id='378195'></div>
             <div dangerouslySetInnerHTML={embedHTML ? { __html: embedHTML } : { __html: '' }} ></div> */}

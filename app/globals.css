@@ -16,12 +16,7 @@
 
 }
 
-@media (max-width: 48rem) {
-  :root {
-    --x-margin: 2.2rem;
 
-  }
-}
 
 @keyframes rotate {
   0% {
@@ -852,6 +847,94 @@ select:focus {
     }
   }
 
+  .libraryContext {
+    margin-top: -0.6rem;
+
+    .playlistGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+      gap: 1.2rem;
+
+      .playlistInfo {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1.2rem;
+        overflow: hidden;
+
+        padding: 0.6rem;
+        left: -0.6rem;
+
+        width: auto;
+        min-width: 14rem;
+        max-width: 18rem;
+
+        .cardBackground {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+
+          z-index: 0;
+          opacity: 0;
+
+          background-color: var(--grey);
+
+          border-radius: 0.4rem;
+        }
+
+        &:hover .cardBackground {
+          opacity: 0.2;
+        }
+
+        .albumWrapper {
+          width: 3.8rem;
+          height: 3.8rem;
+        }
+
+        .albumCover {
+          flex-shrink: 0;
+
+          position: relative;
+          aspect-ratio: 1;
+          width: 3.8rem;
+          height: 3.8rem;
+
+          cursor: pointer;
+
+          border-radius: 0.2rem;
+          overflow: hidden;
+        }
+
+        .infoStack {
+          z-index: 1;
+          margin-right: 1.2rem;
+
+          display: flex;
+          flex-direction: column;
+          white-space: nowrap;
+          gap: 0.24rem;
+          min-width: 0;
+          overflow-x: hidden;
+
+          .title {
+            font-weight: 500;
+            display: inline;
+          }
+
+          .owner {
+            font-weight: 500;
+            opacity: .4;
+            display: inline;
+          }
+        }
+      }
+
+    }
+  }
+
   .photoCard {
     position: relative;
     border-radius: 1.8rem;
@@ -1444,4 +1527,15 @@ select:focus {
     }
   }
 
+}
+
+
+@media (max-width: 48rem) {
+  :root {
+    --x-margin: 2.2rem;
+  }
+
+  .playlistGrid {
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)) !important;
+  }
 }

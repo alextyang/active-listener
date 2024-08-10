@@ -1,9 +1,14 @@
-import { Album, Artist, AudioFeatures, PlaybackState, Playlist, SpotifyApi, TopTracksResult, Track, TrackItem, UserProfile } from "@spotify/web-api-ts-sdk";
+import { Album, Artist, AudioFeatures, PlaybackState, Playlist, SimplifiedPlaylist, SpotifyApi, TopTracksResult, Track, TrackItem, UserProfile } from "@spotify/web-api-ts-sdk";
 import { Dispatch, SetStateAction, act, createContext } from "react";
 
 
-export type PlaylistDict = { [key: string]: Playlist[] };
-export type SpotifyClientObject = { api?: SpotifyApi, user?: UserProfile, login: () => void, logout: () => void, playlistDict?: PlaylistDict };
+export type PlaylistTrackDict = { [key: string]: string[] };
+export type PlaylistIDDict = { [key: string]: SimplifiedPlaylist };
+export type PlaylistContextObject = { playlistTrackDict?: PlaylistTrackDict, playlistIDDict?: PlaylistIDDict };
+export const PlaylistContext = createContext<PlaylistContextObject>({});
+
+
+export type SpotifyClientObject = { api?: SpotifyApi, user?: UserProfile, login: () => void, logout: () => void };
 export const SpotifyClientContext = createContext<SpotifyClientObject>({
     login: function (): void {
         throw new Error("Function not implemented.");

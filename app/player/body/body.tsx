@@ -7,6 +7,7 @@ import ControlIcons from "./components/controlIcons";
 import GenreList from "./components/genres";
 import { SpotifyLogoWhite } from "./components/spotifyLogo";
 import Lyrics from "./lyrics/lyrics";
+import LibraryContext from "./components/libraryContext";
 
 export function Body() {
     const fetchState = useContext(ProgressContext);
@@ -19,6 +20,7 @@ export function Body() {
                 </GenreList>
                 <ControlIcons></ControlIcons>
             </div>
+            <LibraryContext></LibraryContext>
             <Loading state={fetchState.state}></Loading>
             <Lyrics></Lyrics>
             <Articles></Articles>
