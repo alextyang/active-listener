@@ -6,42 +6,42 @@ const gotham = localFont({
   fallback: ['system-ui'],
   src: [
     {
-      path: './font/Gotham-Thin.otf',
+      path: './(lib)/font/Gotham-Thin.otf',
       weight: '200',
       style: 'normal',
     },
     {
-      path: './font/Gotham-ThinItalic.otf',
+      path: './(lib)/font/Gotham-ThinItalic.otf',
       weight: '200',
       style: 'italic',
     },
     {
-      path: './font/Gotham-Light.otf',
+      path: './(lib)/font/Gotham-Light.otf',
       weight: '300',
       style: 'normal',
     },
     {
-      path: './font/Gotham-LightItalic.otf',
+      path: './(lib)/font/Gotham-LightItalic.otf',
       weight: '300',
       style: 'italic',
     },
     {
-      path: './font/Gotham-Book.otf',
+      path: './(lib)/font/Gotham-Book.otf',
       weight: '400',
       style: 'normal',
     },
     {
-      path: './font/Gotham-BookItalic.otf',
+      path: './(lib)/font/Gotham-BookItalic.otf',
       weight: '400',
       style: 'italic',
     },
     {
-      path: './font/Gotham-Medium.otf',
+      path: './(lib)/font/Gotham-Medium.otf',
       weight: '500',
       style: 'normal',
     },
     {
-      path: './font/Gotham-MediumItalic.otf',
+      path: './(lib)/font/Gotham-MediumItalic.otf',
       weight: '500',
       style: 'italic',
     },

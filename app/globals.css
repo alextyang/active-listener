@@ -1411,6 +1411,8 @@ select:focus {
   .footerMessage {
     margin-left: auto;
 
+    cursor: pointer;
+
     padding-bottom: 0.4rem;
 
     color: var(--grey);
