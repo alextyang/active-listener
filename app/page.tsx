@@ -11,7 +11,7 @@ import { LibraryFetchContext, LibraryFetchState, PlaylistContext, PlaylistTrackD
 import Footer from "./components/footer";
 import Intro from "./intro/intro";
 import LyricsTest from "./player/body/lyrics/lyrics";
-import { loadUsersPlaylists, saveUsersPlaylists } from "./storage";
+import { loadUsersPlaylists, saveUsersPlaylists } from "./localStorage";
 
 const SLOW_REQUEST_DELAY = 1 * 100;
 const MAX_PLAYLISTS = 1000;
@@ -40,7 +40,7 @@ export default function Home() {
 
   const login = useCallback(async () => {
     console.log('[AUTH] Attempting Spotify client connection...');
-    logout();
+    // logout();
 
     // React-specific redirect strategy
     class DocumentLocationRedirectionStrategy implements IRedirectionStrategy {
@@ -156,6 +156,15 @@ export default function Home() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spotifyClient]);
+
+  // Try login if token exists
+  useEffect(() => {
+    if (spotifyClient) return;
+    if (localStorage.getItem('spotify-sdk:AuthorizationCodeWithPKCEStrategy:token')) {
+      console.log('[AUTH] Found existing token, attempting login...');
+      login();
+    }
+  });
 
   return (
     <main className={''}>
