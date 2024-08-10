@@ -40,7 +40,7 @@ function PlaylistInfo({ playlist }: { playlist: SimplifiedPlaylist }) {
         <div className={'playlistInfo'}>
             <Link className='albumWrapper' href={playlist.uri}>
                 <Link className="cardBackground" href={playlist.uri}></Link>
-                <Image className='albumCover' src={playlist.images[0].url} alt={playlist.name} width={48} height={48} />
+                <Image className='albumCover' src={playlist.images[0].url} alt={playlist.name} width={128} height={128} />
             </Link>
             <div className="infoStack">
                 <ScrollOverflow>
