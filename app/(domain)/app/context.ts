@@ -44,6 +44,9 @@ export const ActionContext = createContext<ActionContextObject>({
 export type TrackContextObject = { track?: Track, album?: Album, artists?: Artist[], features?: AudioFeatures, siblingAlbums?: Album[], topTracks?: TopTracksResult[] } | null;
 export const TrackContext = createContext<TrackContextObject>({});
 
+export type ContextClueObject = { [key: string]: { type: string, value: any } };
+export const ContextClueContext = createContext<ContextClueObject>({});
+
 
 export const TOTAL_PLAYBACK_FETCH_STEPS = 2;
 export type PlaybackSyncState = { state: 'playback' | 'idle', percent: number };
@@ -87,3 +90,6 @@ export const LibrarySyncContext = createContext<LibrarySyncContextObject>({
 
 export type ArticleContextObject = { articles?: CompleteArticle[] };
 export const ArticleContext = createContext<ArticleContextObject>({});
+
+export type SummaryContextObject = { summary?: React.ReactNode[] };
+export const SummaryContext = createContext<SummaryContextObject>({});

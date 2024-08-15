@@ -9,8 +9,9 @@ import { Body } from "@/app/(components)/app/body";
 import LibraryContext from "@/app/(components)/player/libraryContext";
 import { TrackSyncMessage } from "@/app/(components)/player/trackSyncMessage";
 import { ArticleList } from "@/app/(components)/app/articles/articleList";
-import { Summary } from "./articles/summary/summary";
 import { ArticleProvider } from "@/app/(components)/app/articles/articleProvider";
+import { SummaryProvider } from "@/app/(components)/app/summary/summaryProvider";
+import { SummaryCard } from "@/app/(components)/app/summary/summary";
 
 export default function Page() {
   return (
@@ -24,7 +25,9 @@ export default function Page() {
             <TrackSyncMessage></TrackSyncMessage>
             <div className="journalism">
               <ArticleProvider>
-                <Summary ></Summary>
+                <SummaryProvider>
+                  <SummaryCard />
+                </SummaryProvider>
                 <ArticleList></ArticleList>
               </ArticleProvider>
             </div>

@@ -8,8 +8,8 @@ import { fetchResource, parseParameter } from "@/app/(domain)/utilities/fetch";
 import { Track } from "@spotify/web-api-ts-sdk";
 
 
-export async function GET(request: Request) {
-    const track = parseParameter<Track>(request);
+export async function POST(request: Request) {
+    const track = await parseParameter<Track>(request);
     if (!track) return Response.error();
     if (LOG) console.log('[ARTICLE-SEARCH] Searching for articles for ' + track.name + ' by ' + track.artists.map((artist) => artist.name).join(' '));
 

@@ -4,14 +4,13 @@ import { TrackSyncState, TrackContextObject } from "../app/context";
 import { DEBUG_SPOTIFY_METADATA_SYNC as LOG, SIBLING_ALBUM_LIMIT, SLOW_METADATA_REQUEST_DELAY } from "../app/config";
 import { getMarket } from "./profile";
 
-export async function syncMetadata(client?: SpotifyApi, user?: UserProfile, playbackState?: PlaybackState, currentTrackID?: string, fetchState?: TrackSyncState, setCurrentTrack?: (value: SetStateAction<TrackContextObject>) => void, setFetchState?: (value: SetStateAction<TrackSyncState>) => void) {
-    if (playbackState && shouldSync(playbackState, currentTrackID, fetchState))
+export async function syncMetadata(client?: SpotifyApi, user?: UserProfile, playbackState?: PlaybackState, currentTrackID?: string, fetchState?: TrackSyncState, setCurrentTrack?: (value: TrackContextObject) => void, setFetchState?: (value: SetStateAction<TrackSyncState>) => void) {
+    if (playbackState)
         updateMetadata(client, user, playbackState, setCurrentTrack, setFetchState);
-    else
-        if (LOG) console.log('[SPOTIFY-METADATA] Track already loaded or loading:', playbackState);
+
 }
 
-async function updateMetadata(client?: SpotifyApi, user?: UserProfile, playbackState?: PlaybackState, setCurrentTrack?: (value: SetStateAction<TrackContextObject>) => void, setFetchState?: (value: SetStateAction<TrackSyncState>) => void) {
+async function updateMetadata(client?: SpotifyApi, user?: UserProfile, playbackState?: PlaybackState, setCurrentTrack?: (value: TrackContextObject) => void, setFetchState?: (value: SetStateAction<TrackSyncState>) => void) {
     if (!client || !playbackState || !setCurrentTrack) return;
 
     if (setFetchState) setFetchState({ state: 'track', percent: -1 });
@@ -33,7 +32,7 @@ async function updateMetadata(client?: SpotifyApi, user?: UserProfile, playbackS
     setCurrentTrack({ track: track, artists: artists, album: album, siblingAlbums: siblingAlbums });
 }
 
-function shouldSync(playbackState?: PlaybackState, currentTrackID?: string, fetchState?: TrackSyncState): boolean {
+export function shouldSync(playbackState?: PlaybackState, currentTrackID?: string, fetchState?: TrackSyncState): boolean {
     if (LOG) console.log('[SPOTIFY-METADATA] Should sync? \n\tIs new: ' + isNewTrack(currentTrackID, playbackState) + '\n\tNot already syncing: ' + (fetchState?.state !== 'track'));
     return isNewTrack(currentTrackID, playbackState) && fetchState?.state !== 'track';
 }

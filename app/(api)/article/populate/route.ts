@@ -10,8 +10,8 @@ import { parseReadableArticle } from "@/app/(domain)/utilities/readability";
 import { extractArticleGradient } from "@/app/(domain)/utilities/media";
 
 
-export async function GET(request: Request) {
-    const initialArticles = parseParameter<ArticleSearchResult[]>(request);
+export async function POST(request: Request) {
+    const initialArticles = await parseParameter<ArticleSearchResult[]>(request);
     if (!initialArticles) return Response.error();
     const time = Date.now();
     // if (LOG) console.log('[ARTICLE-POPULATE] Populating articles: ' + initialArticles.map((article) => '\n\t' + article?.title));

@@ -1,3 +1,5 @@
+import { Track } from "@spotify/web-api-ts-sdk";
+
 export type ArticleSearchResult = {
     title: string,
     link: string,
@@ -31,4 +33,16 @@ export type CompleteArticle = {
     type: string,
     relevance: string,
     wordCount: number
+};
+
+export type SimpleArticle = {
+    title: string,
+    byline: string,
+    siteName: string,
+    compressedContent: string
+} | undefined;
+
+export type SummarizeRequest = {
+    track: Track,
+    articles: SimpleArticle[]
 };

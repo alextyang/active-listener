@@ -45,6 +45,17 @@ export const ARTICLE_GRADIENT = ['LightVibrant', 'LightMuted'];
 export const DEFAULT_ARTICLE_TYPE = 'article';
 export const DEFAULT_ARTICLE_RELEVANCE = 'artist';
 
+//Clue settings
+export const CLUE_TYPE_TRACK = 'spotify-track';
+export const CLUE_TYPE_ARTIST = 'spotify-artist';
+export const CLUE_TYPE_ALBUM = 'spotify-album';
+export const CLUE_TYPE_ARTICLE = 'article';
+
+//Summary settings
+export const SUMMARY_MAX_TOKENS_IN = 6400;
+export const SUMMARY_MAX_TOKENS_OUT = 3200;
+export const SUMMARY_MODEL = 'gpt-4o-mini';
+
 // Storage settings
 export const PLAYLIST_STORAGE_KEY = 'playlistDict';
 
@@ -52,22 +63,34 @@ export const PLAYLIST_STORAGE_KEY = 'playlistDict';
 export const INTERNAL_FETCH_SETTINGS = { cache: 'force-cache' } as RequestInit;
 export const ARTICLE_SEARCH_API_ROUTE = 'article/search';
 export const ARTICLE_POPULATE_API_ROUTE = 'article/populate';
+export const SUMMARY_API_ROUTE = 'summarize';
 
 // Log settings
 export const DEBUG_ACCOUNT = false;
 export const DEBUG_LIBRARY_PLAYLIST_SYNC = false;
-export const DEBUG_NOW_PLAYING = true;
+export const DEBUG_NOW_PLAYING = false;
 export const DEBUG_PLAYER_CONTROLS = false;
-export const DEBUG_SPOTIFY_METADATA_SYNC = true;
+export const DEBUG_SPOTIFY_METADATA_SYNC = false;
 export const DEBUG_COMPRESSION = false;
 export const DEBUG_INTERNAL_API = false;
 export const DEBUG_FETCH = false;
-export const DEBUG_ARTICLE_SEARCH = true;
-export const DEBUG_ARTICLE_POPULATE = true;
+export const DEBUG_ARTICLE_SEARCH = false;
+export const DEBUG_ARTICLE_POPULATE = false;
 export const DEBUG_ARTICLE_FILTER = false;
+export const DEBUG_SUMMARY_STREAM = false;
+export const DEBUG_SUMMARY_PARSE = false;
+export const DEBUG_CLUES = true;
 
 // App settings
 export const VERSION = 'v0.2.1';
 
 
 
+export const SUMMARY_PROMPT = `
+You will be given unformatted articles about a provided song, its artist, and its album. Summarize the articles as they explain the specifics of the song's background, musicology, and reception. If they don't contain any relevant information, discuss the artist only.
+\n\nFormat your answer into paragraphs describing: concept, musicality, and reviews. Reference the articles' site name when relevant. Use a neutral, concise tone.
+\n\nDo not discuss the music video at all. Only describe takeaways that are directly relevant to the song. If there aren't any reviews or takeaways, don't make up any. Mention other popular songs by the artist if they are relevant to the discussion.
+\n\nExample:
+\n"Easy" by Troye Sivan, from his fifth EP "In a Dream" released in 2020, revolves around the theme of attempting to salvage a failing relationship. The song's lyrics express Sivan's plea for his partner to stay, reminiscing about how being in love used to feel effortless. It is speculated that the track draws inspiration from Sivan's own breakup with his former partner.
+\n\nThe track is characterized by its mellow and contemplative vibe, featuring '80s-twinged production and Sivan's signature laid-back delivery. The song incorporates elements such as drums, autotune, and a flute-like synth solo. Sivan's vocals, coupled with the nostalgic sound of the production, create an intimate atmosphere.
+\n\nJustin Curto of "Vulture" praised "Easy" for its relaxed and introspective nature, contrasting it with some of Sivan's previous works. He highlighted the track as a departure from Sivan's earlier style, noting its use of autotune and subdued instrumentation. Stephen Daw of "Billboard" commended the song's '80s-inspired production, Sivan's emotive delivery, and the relatable portrayal of a deteriorating relationship.`;

@@ -1,8 +1,9 @@
 import { ARTICLE_RELEVANCE_ORDER, ARTICLE_SEARCH_API_ROUTE, BLACKLISTED_KEYWORDS, CURRENT_URL, DEBUG_ARTICLE_FILTER, INTERNAL_FETCH_SETTINGS, MINIMUM_WORD_COUNT, WHITELISTED_KEYWORDS, ARTICLE_POPULATE_API_ROUTE, ARTICLE_BATCH_SIZE, DEBUG_ARTICLE_POPULATE, DEBUG_ARTICLE_SEARCH } from "../config";
-import { ArticleSearchResult, CompleteArticle } from "@/app/(domain)/app/types";
+import { ArticleSearchResult, CompleteArticle, SimpleArticle } from "@/app/(domain)/app/types";
 import { Track } from "@spotify/web-api-ts-sdk";
 import { TrackSyncState } from "../context";
 import { fetchInternalResource, fetchResource } from "../../utilities/fetch";
+import { compressString } from "../../utilities/compress";
 
 
 
@@ -155,4 +156,17 @@ function sortArticles(articles: (ArticleSearchResult | CompleteArticle)[]): (Art
 
         return aScore - bScore;
     });
+}
+
+export function simplifyArticles(articles: CompleteArticle[]): SimpleArticle[] {
+    return articles.map((article) => simplifyArticle(article));
+}
+
+export function simplifyArticle(article: CompleteArticle): SimpleArticle {
+    return {
+        title: article.title,
+        byline: article.byline,
+        siteName: article.siteName,
+        compressedContent: compressString(article.content)
+    }
 }
