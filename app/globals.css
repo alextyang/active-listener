@@ -903,6 +903,8 @@ select:focus {
           height: 3.8rem;
 
           cursor: pointer;
+          pointer-events: none;
+
 
           border-radius: 0.2rem;
           overflow: hidden;
@@ -935,7 +937,7 @@ select:focus {
     }
   }
 
-  .photoCard {
+  .summaryCard {
     position: relative;
     border-radius: 1.8rem;
 
@@ -966,7 +968,7 @@ select:focus {
       background-clip: border-box;
     }
 
-    .photoCardOverlay {
+    .summaryCardOverlay {
       position: absolute;
 
       top: 0;
@@ -989,7 +991,7 @@ select:focus {
     }
 
 
-    .photoCardPhoto {
+    .summaryCardPhoto {
       position: absolute;
       transform: translate3d(0, 0, 0);
       backface-visibility: visible;
@@ -1006,15 +1008,15 @@ select:focus {
     }
   }
 
-  .photoCard:hover {
-    .photoCardOverlay {
+  .summaryCard:hover {
+    .summaryCardOverlay {
       transform: translate3d(0, 0, 0rem);
     }
   }
 
   &:hover {
-    .photoCard {
-      .photoCardOverlay {
+    .summaryCard {
+      .summaryCardOverlay {
         transform: translate3d(0, 0, -999rem);
       }
     }
@@ -1115,7 +1117,7 @@ select:focus {
         flex-direction: column;
       }
 
-      .photoCard .photoCardOverlay {
+      .summaryCard .summaryCardOverlay {
         display: none;
       }
 

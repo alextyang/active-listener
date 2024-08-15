@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react"
-import { TrackContext } from "../../(domain)/context";
+import { TrackContext } from "../../(domain)/app/context";
 
 
 export default function ScrollOverflow({ children }: { children: React.ReactNode }) {

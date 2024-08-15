@@ -1,6 +1,6 @@
 "use server";
 
-import { TrackContextObject } from "@/app/(domain)/context";
+import { TrackContextObject } from "@/app/(domain)/app/context";
 import { Album, Market, Page, SpotifyApi, TopTracksResult, Track } from "@spotify/web-api-ts-sdk";
 
 export async function searchSongs(query: string): Promise<Track[]> {

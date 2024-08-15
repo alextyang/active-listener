@@ -1,13 +1,13 @@
 import { IRedirectionStrategy, SpotifyApi } from "@spotify/web-api-ts-sdk";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { SPOTIFY_CLIENT_ID, LOGIN_REDIRECT_URI } from "../config";
+import { SPOTIFY_CLIENT_ID, CURRENT_URL, DEBUG_ACCOUNT as LOG } from "../app/config";
 import { hasLocalKey } from "../browser/localStorage";
 
 
 export function shouldAutoLogin(client: SpotifyApi | undefined): boolean {
     const should = !client && hasSpotifyToken();
     if (should)
-        console.log('[SPOTIFY-ACCOUNT] Found existing token, attempting login...');
+        if (LOG) console.log('[SPOTIFY-ACCOUNT] Found existing token, attempting login...');
     return should;
 }
 
@@ -19,7 +19,7 @@ function hasSpotifyToken(): boolean {
 export function trySpotifyLogin(
     router: AppRouterInstance): SpotifyApi | undefined {
 
-    console.log('[SPOTIFY-ACCOUNT] Attempting Spotify login or redirect...');
+    if (LOG) console.log('[SPOTIFY-ACCOUNT] Attempting Spotify login or redirect...');
 
     // Use router for redirecting
     class DocumentLocationRedirectionStrategy implements IRedirectionStrategy {
@@ -29,7 +29,7 @@ export function trySpotifyLogin(
         }
 
         public async redirect(targetUrl: string | URL): Promise<void> {
-            console.log(targetUrl);
+            if (LOG) console.log(targetUrl);
             router.push(targetUrl.toString());
         }
 
@@ -40,11 +40,11 @@ export function trySpotifyLogin(
     // Attempt Spotify login
     let client = undefined;
     try {
-        client = SpotifyApi.withUserAuthorization(SPOTIFY_CLIENT_ID, LOGIN_REDIRECT_URI, ['user-read-currently-playing', 'user-modify-playback-state', 'user-read-playback-state', 'user-library-read', 'user-read-email', 'playlist-read-private', 'playlist-read-collaborative'], { redirectionStrategy: new DocumentLocationRedirectionStrategy(router) });
+        client = SpotifyApi.withUserAuthorization(SPOTIFY_CLIENT_ID, CURRENT_URL, ['user-read-currently-playing', 'user-modify-playback-state', 'user-read-playback-state', 'user-library-read', 'user-read-email', 'playlist-read-private', 'playlist-read-collaborative'], { redirectionStrategy: new DocumentLocationRedirectionStrategy(router) });
     } catch (error) {
         console.error('[SPOTIFY-ACCOUNT] Spotify login failed.', error);
     }
-    console.log('[SPOTIFY-ACCOUNT] Spotify login successful.');
+    if (LOG) console.log('[SPOTIFY-ACCOUNT] Spotify login successful.');
 
     return client;
 }
@@ -56,6 +56,7 @@ export function trySpotifyLogout(
     router: AppRouterInstance) {
 
     if (!spotifyClient) return;
+    if (LOG) console.log('[SPOTIFY-ACCOUNT] Logging out...');
 
     spotifyClient.logOut();
     setSpotifyClient(undefined);

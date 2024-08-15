@@ -1,15 +1,15 @@
 import { Page, Playlist, SimplifiedPlaylist, SpotifyApi } from "@spotify/web-api-ts-sdk";
-import { DEBUG_LIBRARY_PLAYLIST_SYNC as LOG, MAX_USER_PLAYLISTS, PLAYLIST_FETCH_LIMIT, PLAYLIST_STORAGE_KEY, SLOW_REQUEST_DELAY } from "../config";
-import { LibraryState, PlaylistDict } from "../context";
+import { DEBUG_LIBRARY_PLAYLIST_SYNC as LOG, MAX_USER_PLAYLISTS, PLAYLIST_FETCH_LIMIT, PLAYLIST_STORAGE_KEY, PLAYLIST_REQUEST_DELAY } from "../app/config";
+import { LibrarySyncState, PlaylistDict } from "../app/context";
 import { loadLocalItem, saveLocalItem } from "../browser/localStorage";
 
 const wait = (m: number) => new Promise(r => setTimeout(r, m))
 
-export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryState: LibraryState, setLibraryState?: (state: LibraryState) => void): Promise<PlaylistDict | undefined> {
+export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryState: LibrarySyncState, setLibraryState?: (state: LibrarySyncState) => void): Promise<PlaylistDict | undefined> {
     if (!client || !shouldSyncPlaylists(libraryState)) {
         if (LOG) console.log('[LIBRARY-PLAYLISTS] No client or already syncing playlists.');
         if (setLibraryState)
-            setLibraryState({ state: 'no-library', percent: -1 });
+            setLibraryState({ state: 'idle', percent: -1 });
         return;
     }
 
@@ -19,7 +19,7 @@ export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryS
     if (!simplifiedPlaylists) {
         if (LOG) console.log('[LIBRARY-PLAYLISTS] No playlists found for current user.');
         if (setLibraryState)
-            setLibraryState({ state: 'no-library', percent: -1 });
+            setLibraryState({ state: 'idle', percent: -1 });
         return;
     }
 
@@ -31,7 +31,7 @@ export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryS
 
 
     if (setLibraryState)
-        setLibraryState({ state: 'done', percent: -1 });
+        setLibraryState({ state: 'idle', percent: -1 });
     if (LOG) console.log('[LIBRARY-PLAYLISTS] Successfully synced playlists:', Object.keys(newPlaylistDict.playlists).length);
 
     savePlaylistDict(newPlaylistDict);
@@ -39,15 +39,15 @@ export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryS
 }
 
 
-export function shouldSyncPlaylists(libraryState: LibraryState): boolean {
-    return (libraryState.state === 'no-library' || libraryState.state === 'done');
+export function shouldSyncPlaylists(libraryState: LibrarySyncState): boolean {
+    return (libraryState.state === 'idle');
 }
 
 export function isValidPlaylistDict(playlistDict: PlaylistDict | undefined): boolean {
     return playlistDict !== undefined && playlistDict?.playlists !== undefined && playlistDict?.tracks !== undefined && Object.keys(playlistDict?.playlists).length > 0 && Object.keys(playlistDict?.tracks).length > 0;
 }
 
-export async function createPlaylistDict(client: SpotifyApi, playlists: SimplifiedPlaylist[], setLibraryState?: (state: LibraryState) => void): Promise<PlaylistDict> {
+export async function createPlaylistDict(client: SpotifyApi, playlists: SimplifiedPlaylist[], setLibraryState?: (state: LibrarySyncState) => void): Promise<PlaylistDict> {
     const populatedPlaylists = await getPopulatedPlaylists(client, playlists, setLibraryState);
     const playlistDict: PlaylistDict = { tracks: {}, playlists: {} };
 
@@ -56,7 +56,7 @@ export async function createPlaylistDict(client: SpotifyApi, playlists: Simplifi
     return addPlaylistsToDict(playlists, populatedPlaylists, playlistDict);
 }
 
-export async function updatePlaylistDict(client: SpotifyApi, playlists: SimplifiedPlaylist[], oldPlaylistDict: PlaylistDict, setLibraryState?: (state: LibraryState) => void): Promise<PlaylistDict> {
+export async function updatePlaylistDict(client: SpotifyApi, playlists: SimplifiedPlaylist[], oldPlaylistDict: PlaylistDict, setLibraryState?: (state: LibrarySyncState) => void): Promise<PlaylistDict> {
     const newPlaylists = getNewPlaylists(playlists, oldPlaylistDict);
     const updatedPlaylists = getUpdatedPlaylists(playlists, oldPlaylistDict);
     const deletedPlaylists = getDeletedPlaylists(playlists, oldPlaylistDict);
@@ -73,7 +73,7 @@ export async function updatePlaylistDict(client: SpotifyApi, playlists: Simplifi
     return newPlaylistDict;
 }
 
-export async function getUserSimplifiedPlaylists(client: SpotifyApi, setLibraryState?: (state: LibraryState) => void): Promise<SimplifiedPlaylist[]> {
+export async function getUserSimplifiedPlaylists(client: SpotifyApi, setLibraryState?: (state: LibrarySyncState) => void): Promise<SimplifiedPlaylist[]> {
     const playlistPage: Page<SimplifiedPlaylist>[] = [await client.currentUser.playlists.playlists(PLAYLIST_FETCH_LIMIT)];
     const playlists = playlistPage[0].items;
 
@@ -82,14 +82,14 @@ export async function getUserSimplifiedPlaylists(client: SpotifyApi, setLibraryS
         if (setLibraryState)
             setLibraryState({ state: 'library', percent: -1 });
 
-        await new Promise((resolve) => setTimeout(resolve, SLOW_REQUEST_DELAY));
+        await new Promise((resolve) => setTimeout(resolve, PLAYLIST_REQUEST_DELAY));
         playlistPage.push(await client.currentUser.playlists.playlists(PLAYLIST_FETCH_LIMIT, PLAYLIST_FETCH_LIMIT * playlistPage.length));
         playlists.push(...playlistPage[playlistPage.length - 1].items);
     }
     return playlists;
 }
 
-export async function getPopulatedPlaylists(client: SpotifyApi, playlists: SimplifiedPlaylist[], setLibraryState?: (state: LibraryState) => void): Promise<Playlist[]> {
+export async function getPopulatedPlaylists(client: SpotifyApi, playlists: SimplifiedPlaylist[], setLibraryState?: (state: LibrarySyncState) => void): Promise<Playlist[]> {
     if (playlists.length > MAX_USER_PLAYLISTS) {
         if (LOG) console.log('[LIBRARY-PLAYLISTS] Too many playlists to download, only syncing first ' + MAX_USER_PLAYLISTS + ' playlists.');
         playlists.splice(MAX_USER_PLAYLISTS, playlists.length - MAX_USER_PLAYLISTS);
@@ -106,7 +106,7 @@ export async function getPopulatedPlaylists(client: SpotifyApi, playlists: Simpl
 
         const [playlist] = await Promise.all([
             getPopulatedPlaylist(client, playlistID),
-            wait(SLOW_REQUEST_DELAY)
+            wait(PLAYLIST_REQUEST_DELAY)
         ]);
 
         populatedPlaylists.push(playlist);
