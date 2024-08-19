@@ -49,12 +49,11 @@ export const ContextClueContext = createContext<ContextClueObject>({});
 
 
 export const TOTAL_PLAYBACK_FETCH_STEPS = 2;
-export type PlaybackSyncState = { state: 'playback' | 'idle', percent: number };
-export type PlaybackSyncContextObject = { state: PlaybackSyncState, update: Dispatch<SetStateAction<PlaybackSyncState>> };
+export type PlaybackSyncState = { state: 'playback' | 'waiting', percent?: number };
+export type PlaybackSyncContextObject = { state: PlaybackSyncState, update: (value: PlaybackSyncState) => void };
 export const PlaybackSyncContext = createContext<PlaybackSyncContextObject>({
     state: {
-        state: "idle",
-        percent: -1
+        state: "waiting"
     },
     update: function (value: SetStateAction<PlaybackSyncState>): void {
         throw new Error("Function not implemented.");
@@ -62,13 +61,12 @@ export const PlaybackSyncContext = createContext<PlaybackSyncContextObject>({
 });
 
 export const TOTAL_TRACK_FETCH_STEPS = 3;
-export type TrackSyncState = { state: 'track' | 'articles' | 'summary' | 'idle', percent: number };
-export const trackSyncMessages = { 'track': '', 'articles': 'Finding reviews for track...', 'summary': 'Generating summary...', 'idle': '' };
-export type TrackSyncContextObject = { state: TrackSyncState, update: Dispatch<SetStateAction<TrackSyncState>> };
+export type TrackSyncState = { state: 'track' | 'articles' | 'summary' | 'waiting', percent?: number };
+export const trackSyncMessages = { 'track': '', 'articles': 'Finding reviews for track...', 'summary': 'Generating summary...', 'waiting': '' };
+export type TrackSyncContextObject = { state: TrackSyncState, update: (value: TrackSyncState) => void };
 export const TrackSyncContext = createContext<TrackSyncContextObject>({
     state: {
-        state: "idle",
-        percent: -1
+        state: "waiting"
     },
     update: function (value: SetStateAction<TrackSyncState>): void {
         throw new Error("Function not implemented.");
@@ -76,12 +74,11 @@ export const TrackSyncContext = createContext<TrackSyncContextObject>({
 });
 
 export const TOTAL_LIBRARY_FETCH_STEPS = 2;
-export type LibrarySyncState = { state: 'library' | 'playlists' | 'idle', percent: number };
+export type LibrarySyncState = { state: 'library' | 'playlists' | 'waiting', percent?: number };
 export type LibrarySyncContextObject = { state: LibrarySyncState, requestUpdate: () => void };
 export const LibrarySyncContext = createContext<LibrarySyncContextObject>({
     state: {
-        state: "idle",
-        percent: -1
+        state: "waiting"
     },
     requestUpdate: function (): void {
         throw new Error("Function not implemented.");

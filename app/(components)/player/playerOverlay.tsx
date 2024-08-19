@@ -1,7 +1,7 @@
 import Link from "next/link";
 import PlaybackBackground from "../music/track/background";
 import GenreList from "../music/track/genreList";
-import TrackInfo from "../music/track/track";
+import TrackInfo from "../music/track/trackInfo";
 import { SpotifyLogoWhite } from "../service/spotifyLogo";
 import ControlIcons from "./controls/controlIcons";
 import Controls from "./controls/controls";

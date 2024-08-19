@@ -15,5 +15,15 @@ export function isSelfTitled(name: string, artistNames: string[]): boolean {
     return artists.some((artist) => album.includes(artist));
 }
 
+export function extractCommonName(trackName: string) {
+    if (trackName.includes('('))
+        return trackName.substring(0, trackName.indexOf('(')).trim();
+    else if (trackName.includes('['))
+        return trackName.substring(0, trackName.indexOf('[')).trim();
+    else if (trackName.includes('-'))
+        return trackName.substring(0, trackName.indexOf('-')).trim();
+    else return undefined;
+}
+
 
 

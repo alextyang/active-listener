@@ -7,12 +7,18 @@ import { CompleteArticle } from "../types";
 import { Album, Artist, Track } from "@spotify/web-api-ts-sdk";
 import { AlbumHoverMenu, ArticleHoverMenu, ArtistHoverMenu, TrackHoverMenu } from "@/app/(components)/music/textualHoverMenu";
 import { startSummaryStream } from "@/app/(api)/summarize/action";
+import { extractCommonName } from "../../music/metadata";
 
-export async function streamSummary(track: Track, articles: CompleteArticle[] | undefined, clues: ContextClueObject, updateSummary: (value: React.ReactNode[], id: string) => void, getCurrentTrackID: () => string, updateSyncState?: (state: TrackSyncState) => void): Promise<void> {
+export async function streamSummary(track: Track, articles: CompleteArticle[] | undefined, clues: ContextClueObject, updateSummary: (value: React.ReactNode[], id: string) => void, getCurrentTrackID: () => string, syncState: TrackSyncState, updateSyncState?: (state: TrackSyncState) => void): Promise<void> {
     if (!track) return updateSummary([], '');
-    if (!articles || articles.length === 0) {
-        if (LOG_S) console.log('[SUMMARY-STREAM] Giving no material summary for ' + track.name);
-        return updateSummary(parseSummary('No reviews found for ' + track.name + ' by ' + track.artists.map(artist => artist.name).join(', ') + ' from ' + track.album.name + '.', clues), track.id);
+    if (!articles || (articles.length === 0)) {
+        if ((syncState.state === 'articles' && syncState.percent === 100)) {
+            if (updateSyncState) updateSyncState({ state: 'waiting', percent: -1 });
+            if (LOG_S) console.log('[SUMMARY-STREAM] Giving no material summary for ' + track.name);
+            return updateSummary(parseSummary('No reviews found for ' + track.name + ' by ' + track.artists.map(artist => artist.name).join(', ') + ' from ' + track.album.name + '.', clues, track), track.id);
+        }
+        if (LOG_S) console.log('[SUMMARY-STREAM] Waiting for articles for ' + track.name);
+        return;
     }
     if (LOG_S) console.log('[SUMMARY-STREAM] Streaming summary for ' + track.name + ' by ' + track.artists.map(artist => artist.name).join(', ') + ' from ' + track.album.name + ' with ' + articles.length + ' articles');
 
@@ -27,17 +33,18 @@ export async function streamSummary(track: Track, articles: CompleteArticle[] | 
     for await (const value of readStreamableValue(summaryStream)) {
         summaryString += value;
         if (track.id !== getCurrentTrackID()) return;
-        updateSummary(parseSummary(summaryString, clues), track.id);
+        updateSummary(parseSummary(summaryString, clues, track), track.id);
 
         if (LOG_P) console.log('[SUMMARY-STREAM] Updated summary for ' + track.name + ' with ' + summaryString.length + ' characters');
     }
 
-    if (updateSyncState) updateSyncState({ state: 'idle', percent: -1 });
+    if (updateSyncState) updateSyncState({ state: 'waiting', percent: -1 });
 }
 
-function parseSummary(str: string, originalClues: ContextClueObject): React.ReactNode[] {
+function parseSummary(str: string, originalClues: ContextClueObject, track: Track): React.ReactNode[] {
     if (!str || str.length === 0) return [];
     str = ' ' + cleanSummary(str);
+    str = standardizeTrackNames(str, Object.keys(originalClues));
 
     let index = 0;
     const clues = { ...originalClues };
@@ -55,7 +62,8 @@ function parseSummary(str: string, originalClues: ContextClueObject): React.Reac
             textNodes.push(createClueNode(clue, originalClues[clue], index));
             index += clue.length + 1;
 
-            if (DEBUG_CLUES) console.log('[SUMMARY-PARSE] Found ' + originalClues[clue].type + ' clue:', clue, 'at', index);
+            if (LOG_P) console.log('[SUMMARY-PARSE] Found ' + originalClues[clue].type + ' clue:', clue, 'at', index);
+            if (LOG_P) console.log('[SUMMARY-PARSE] Working text:', textNodes);
         }
         else if (str[index] === '\n') {
             if (workingTextNode.length > 0)
@@ -90,10 +98,23 @@ function cleanSummary(str: string): string {
     return str.replaceAll('"', '').replaceAll('\' ', ' ').replaceAll(' \'', ' ').replaceAll('**', '').trim();
 }
 
+function standardizeTrackNames(str: string, trackNames: string[]): string {
+    for (const trackName of trackNames)
+        str = standardizeTrackName(str, trackName);
+    return str;
+}
+
+function standardizeTrackName(str: string, trackName: string): string {
+    if (str.includes(trackName)) return str;
+    return str.replace(extractCommonName(trackName) ?? trackName, trackName);
+}
+
 function getClue(str: string, from: number, clues: ContextClueObject): string | undefined {
     if (str[from] !== ' ') return undefined;
 
-    const clue = Object.keys(clues).find(key => str.slice(from + 1, from + key.length + 1).toLowerCase().startsWith(key.toLowerCase()));
+    const clue = Object.keys(clues).find(key =>
+        str.slice(from + 1, from + key.length + 1).toLowerCase().startsWith(key.toLowerCase())
+        && (from + key.length + 1 >= str.length || !isAlphaNumeric(str[from + key.length + 1])));
 
     if (clue && clues[clue])
         delete clues[clue];
@@ -102,7 +123,7 @@ function getClue(str: string, from: number, clues: ContextClueObject): string | 
 }
 
 function createTextNode(str: string, index: number) {
-    return (<p key={index + 'plain'}> {str + ' '}</p>);
+    return (<span key={index + 'plain'}>{str + ' '}</span>);
 }
 
 function wrapParagraphNodes(index: number, children: React.ReactNode[]) {
@@ -112,21 +133,36 @@ function wrapParagraphNodes(index: number, children: React.ReactNode[]) {
 function createClueNode(name: string, clue: { type: string, value: any }, index: number) {
     if (clue.type === CLUE_TYPE_TRACK)
         return (<TrackHoverMenu key={index + 'clue'} track={clue.value as Track}>
-            <p>{name}</p>
+            <span>{name}</span>
         </TrackHoverMenu>);
     else if (clue.type === CLUE_TYPE_ARTIST)
         return (<ArtistHoverMenu key={index + 'clue'} artist={clue.value as Artist}>
-            <p>{name}</p>
+            <span>{name}</span>
         </ArtistHoverMenu>);
     else if (clue.type === CLUE_TYPE_ALBUM)
         return (<AlbumHoverMenu key={index + 'clue'} album={clue.value as Album}>
-            <p>{name}</p>
+            <span>{name}</span>
         </AlbumHoverMenu>);
     else if (clue.type === CLUE_TYPE_ARTICLE)
         return (<ArticleHoverMenu key={index + 'clue'} article={clue.value as CompleteArticle}>
-            <p>{name}</p>
+            <span>{name}</span>
         </ArticleHoverMenu>);
     else
         console.error('Unknown clue type parsed:', clue);
 
 }
+
+// from https://stackoverflow.com/questions/4434076/best-way-to-alphanumeric-check-in-javascript
+function isAlphaNumeric(str: string): boolean {
+    var code, i, len;
+
+    for (i = 0, len = str.length; i < len; i++) {
+        code = str.charCodeAt(i);
+        if (!(code > 47 && code < 58) && // numeric (0-9)
+            !(code > 64 && code < 91) && // upper alpha (A-Z)
+            !(code > 96 && code < 123)) { // lower alpha (a-z)
+            return false;
+        }
+    }
+    return true;
+};

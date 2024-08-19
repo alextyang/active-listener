@@ -38,7 +38,7 @@ export default function ScrollOverflow({ children }: { children: React.ReactNode
                 (children) :
                 (
                     <div>{children}
-                        <div className="redundant">{children}</div>
+                        <div key={'overflow'} className="redundant">{children}</div>
                     </div>
                 )}
         </div>

@@ -4,37 +4,36 @@ import { TrackSyncState, TrackContextObject } from "../app/context";
 import { DEBUG_SPOTIFY_METADATA_SYNC as LOG, SIBLING_ALBUM_LIMIT, SLOW_METADATA_REQUEST_DELAY } from "../app/config";
 import { getMarket } from "./profile";
 
-export async function syncMetadata(client?: SpotifyApi, user?: UserProfile, playbackState?: PlaybackState, currentTrackID?: string, fetchState?: TrackSyncState, setCurrentTrack?: (value: TrackContextObject) => void, setFetchState?: (value: SetStateAction<TrackSyncState>) => void) {
-    if (playbackState)
-        updateMetadata(client, user, playbackState, setCurrentTrack, setFetchState);
+export async function syncMetadata(client?: SpotifyApi, user?: UserProfile, playbackState?: PlaybackState, fetchState?: TrackSyncState, setCurrentTrack?: (value: TrackContextObject) => boolean, setFetchState?: (value: SetStateAction<TrackSyncState>) => void) {
+    updateMetadata(client, user, playbackState, setCurrentTrack, setFetchState);
 
 }
 
-async function updateMetadata(client?: SpotifyApi, user?: UserProfile, playbackState?: PlaybackState, setCurrentTrack?: (value: TrackContextObject) => void, setFetchState?: (value: SetStateAction<TrackSyncState>) => void) {
+async function updateMetadata(client?: SpotifyApi, user?: UserProfile, playbackState?: PlaybackState, setCurrentTrack?: (value: TrackContextObject) => boolean, setFetchState?: (value: SetStateAction<TrackSyncState>) => void) {
     if (!client || !playbackState || !setCurrentTrack) return;
 
-    if (setFetchState) setFetchState({ state: 'track', percent: -1 });
+    if (setFetchState) setFetchState({ state: 'track' });
 
     const track = playbackState.item as Track;
     setCurrentTrack({ track: track });
     if (LOG) console.log('[SPOTIFY-METADATA] Found track:', track);
 
     const artists = await fetchArtists(client, track);
-    setCurrentTrack({ track: track, artists: artists });
+    if (!setCurrentTrack({ track: track, artists: artists })) return;
 
     const album = await fetchAlbum(client, track);
-    setCurrentTrack({ track: track, artists: artists, album: album });
+    if (!setCurrentTrack({ track: track, artists: artists, album: album })) return;
 
     const topTracks = await fetchArtistsTopTracks(client, artists, user);
-    setCurrentTrack({ track: track, artists: artists, album: album, topTracks: topTracks });
+    if (!setCurrentTrack({ track: track, artists: artists, album: album, topTracks: topTracks })) return;
 
     const siblingAlbums = await fetchArtistsAlbums(client, artists, album);
-    setCurrentTrack({ track: track, artists: artists, album: album, siblingAlbums: siblingAlbums });
+    if (!setCurrentTrack({ track: track, artists: artists, album: album, siblingAlbums: siblingAlbums })) return;
 }
 
 export function shouldSync(playbackState?: PlaybackState, currentTrackID?: string, fetchState?: TrackSyncState): boolean {
-    if (LOG) console.log('[SPOTIFY-METADATA] Should sync? \n\tIs new: ' + isNewTrack(currentTrackID, playbackState) + '\n\tNot already syncing: ' + (fetchState?.state !== 'track'));
-    return isNewTrack(currentTrackID, playbackState) && fetchState?.state !== 'track';
+    if (LOG) console.log('[SPOTIFY-METADATA] Should sync? \n\tIs new: ' + isNewTrack(currentTrackID, playbackState));
+    return isNewTrack(currentTrackID, playbackState);
 }
 
 

@@ -1,5 +1,4 @@
 import { LibrarySyncContext, LibrarySyncState, PlaylistContext } from "@/app/(domain)/app/context";
-import { shouldSyncPlaylists } from "@/app/(domain)/spotify/library";
 import { useContext, useRef, useCallback, use, useEffect, useState } from "react";
 
 
@@ -9,11 +8,11 @@ export function LibraryStatus() {
     const [message, setMessage] = useState<string>('');
 
     const displayLibraryState = useCallback((libraryState: LibrarySyncState) => {
-        if (libraryState.state === 'idle' && !playlists.playlistDict) setMessage('No library loaded.');
-        else if (libraryState.state === 'idle' && playlists.playlistDict) setMessage('Library loaded.');
+        if (libraryState.state === 'waiting' && !playlists.playlistDict) setMessage('No library loaded.');
+        else if (libraryState.state === 'waiting' && playlists.playlistDict) setMessage('Library loaded.');
         else if (libraryState.state === 'library') setMessage('Syncing library...');
         else if (libraryState.state === 'playlists') setMessage('Syncing playlists... (' + libraryState.percent + '%)');
-    }, []);
+    }, [playlists.playlistDict]);
 
     useEffect(() => {
         displayLibraryState(libraryState.state);
@@ -21,9 +20,8 @@ export function LibraryStatus() {
 
 
     const handleMouseEnter = useCallback(() => {
-        if (shouldSyncPlaylists(libraryState.state))
-            setMessage('Click to refresh library.');
-    }, [libraryState.state]);
+        setMessage('Click to refresh library.');
+    }, []);
 
     const handleMouseLeave = useCallback(() => {
         displayLibraryState(libraryState.state);

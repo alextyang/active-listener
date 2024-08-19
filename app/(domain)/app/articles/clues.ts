@@ -6,7 +6,6 @@ export function extractArticleContextClues(articles: CompleteArticle[]): Context
     const clues: ContextClueObject = {};
 
     articles.forEach((article) => {
-        addClue(clues, article.title, article);
         addClue(clues, article.byline, article);
         addClue(clues, article.siteName, article);
     });

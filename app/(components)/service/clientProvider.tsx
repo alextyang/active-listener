@@ -7,6 +7,7 @@ import { SpotifyApi, UserProfile } from "@spotify/web-api-ts-sdk";
 import { useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { LibraryProvider } from "./libraryProvider";
+import { LoadingScreen } from "../site/loadingScreen";
 
 export function ClientProvider({ children, loginPage }: { children: React.ReactNode, loginPage: React.ReactNode }) {
     const [spotifyClient, setSpotifyClient] = useState<SpotifyApi | undefined>(undefined);
@@ -31,7 +32,12 @@ export function ClientProvider({ children, loginPage }: { children: React.ReactN
             handleLogin();
     }, [handleLogin, spotifyClient]);
 
-    if (!spotifyClient) // Show login / splash screen if not logged in
+    if (!spotifyClient && shouldAutoLogin(spotifyClient)) // Show nothing while auto-logging in
+        return (
+            <LoadingScreen></LoadingScreen>
+        );
+
+    if (!spotifyClient && !shouldAutoLogin(spotifyClient)) // Show login / splash screen if not logged in
         return (
             <SpotifyClientContext.Provider value={{ api: spotifyClient, user: userProfile, login: handleLogin, logout: handleLogout }}>
                 {loginPage}

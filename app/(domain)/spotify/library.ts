@@ -1,25 +1,33 @@
 import { Page, Playlist, SimplifiedPlaylist, SpotifyApi } from "@spotify/web-api-ts-sdk";
-import { DEBUG_LIBRARY_PLAYLIST_SYNC as LOG, MAX_USER_PLAYLISTS, PLAYLIST_FETCH_LIMIT, PLAYLIST_STORAGE_KEY, PLAYLIST_REQUEST_DELAY } from "../app/config";
+import { DEBUG_LIBRARY_PLAYLIST_SYNC as LOG, MAX_USER_PLAYLISTS, PLAYLIST_FETCH_LIMIT, PLAYLIST_STORAGE_KEY, PLAYLIST_REQUEST_DELAY, PLAYLIST_SYNC_INTERVAL } from "../app/config";
 import { LibrarySyncState, PlaylistDict } from "../app/context";
 import { loadLocalItem, saveLocalItem } from "../browser/localStorage";
 
 const wait = (m: number) => new Promise(r => setTimeout(r, m))
 
-export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryState: LibrarySyncState, setLibraryState?: (state: LibrarySyncState) => void): Promise<PlaylistDict | undefined> {
-    if (!client || !shouldSyncPlaylists(libraryState)) {
-        if (LOG) console.log('[LIBRARY-PLAYLISTS] No client or already syncing playlists.');
-        if (setLibraryState)
-            setLibraryState({ state: 'idle', percent: -1 });
+export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryState: LibrarySyncState, isManualRefresh: boolean, setLibraryState?: (state: LibrarySyncState) => void): Promise<PlaylistDict | undefined> {
+    if (!client || libraryState.state !== 'waiting') {
+        if (LOG) console.log('[LIBRARY-PLAYLISTS] No client or already syncing');
+        if (setLibraryState) setLibraryState({ state: 'waiting' });
         return;
     }
 
+    if (!shouldAutoSyncPlaylists(libraryState, isManualRefresh)) {
+        if (LOG) console.log('[LIBRARY-PLAYLISTS] Too soon to resync playlists.');
+        if (setLibraryState) setLibraryState({ state: 'library' });
+        const oldPlaylistDict = loadPlaylistDict();
+        if (setLibraryState) setLibraryState({ state: 'waiting' });
+        return oldPlaylistDict;
+    }
+
+    if (setLibraryState) setLibraryState({ state: 'library' });
     const oldPlaylistDict = loadPlaylistDict();
     const simplifiedPlaylists = await getUserSimplifiedPlaylists(client, setLibraryState);
 
     if (!simplifiedPlaylists) {
         if (LOG) console.log('[LIBRARY-PLAYLISTS] No playlists found for current user.');
         if (setLibraryState)
-            setLibraryState({ state: 'idle', percent: -1 });
+            setLibraryState({ state: 'waiting' });
         return;
     }
 
@@ -31,16 +39,15 @@ export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryS
 
 
     if (setLibraryState)
-        setLibraryState({ state: 'idle', percent: -1 });
+        setLibraryState({ state: 'waiting' });
     if (LOG) console.log('[LIBRARY-PLAYLISTS] Successfully synced playlists:', Object.keys(newPlaylistDict.playlists).length);
 
     savePlaylistDict(newPlaylistDict);
     return newPlaylistDict;
 }
 
-
-export function shouldSyncPlaylists(libraryState: LibrarySyncState): boolean {
-    return (libraryState.state === 'idle');
+export function shouldAutoSyncPlaylists(libraryState: LibrarySyncState, isManualRefresh: boolean): boolean {
+    return isManualRefresh ? true : (Date.now() - (loadLibraryTimestamp() ?? 0)) > PLAYLIST_SYNC_INTERVAL;
 }
 
 export function isValidPlaylistDict(playlistDict: PlaylistDict | undefined): boolean {
@@ -79,8 +86,6 @@ export async function getUserSimplifiedPlaylists(client: SpotifyApi, setLibraryS
 
     while (playlistPage[playlistPage.length - 1].next) {
         if (LOG) console.log('[LIBRARY-PLAYLISTS] Downloading playlists...', playlists);
-        if (setLibraryState)
-            setLibraryState({ state: 'library', percent: -1 });
 
         await new Promise((resolve) => setTimeout(resolve, PLAYLIST_REQUEST_DELAY));
         playlistPage.push(await client.currentUser.playlists.playlists(PLAYLIST_FETCH_LIMIT, PLAYLIST_FETCH_LIMIT * playlistPage.length));
@@ -180,6 +185,7 @@ function addPlaylistsToDict(playlists: SimplifiedPlaylist[], populatedPlaylists:
 
 function savePlaylistDict(playlistDict: PlaylistDict) {
     saveLocalItem(PLAYLIST_STORAGE_KEY, playlistDict);
+    saveLocalItem('lastPlaylistSync', Date.now());
 }
 
 function loadPlaylistDict(): PlaylistDict | undefined {
@@ -191,4 +197,11 @@ function loadPlaylistDict(): PlaylistDict | undefined {
         console.log('[LIBRARY-PLAYLISTS] Loaded cached playlists:', Object.keys(playlistDict.playlists).length);
 
     return playlistDict;
+}
+
+function loadLibraryTimestamp(): number | undefined {
+    const timestamp = loadLocalItem<number>('lastPlaylistSync');
+    if (timestamp)
+        return timestamp;
+    return;
 }

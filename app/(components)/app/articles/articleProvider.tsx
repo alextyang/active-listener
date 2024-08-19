@@ -23,8 +23,10 @@ export function ArticleProvider({ children }: { children: React.ReactNode }) {
     }, [fetchState]);
 
     const handleArticleUpdate = useCallback(async () => {
-        if (!trackContext?.track) return setArticles([]);
-        if (trackContext.track.id === lastTrackID.current) return;
+        if (trackContext?.track?.id === lastTrackID.current) return;
+        setArticles([]);
+
+        if (!trackContext?.track) return;
         lastTrackID.current = trackContext.track.id;
 
         const newArticles = await getArticles(trackContext.track, handleSyncStateUpdate);

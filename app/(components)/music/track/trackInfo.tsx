@@ -12,12 +12,12 @@ export default function TrackInfo() {
         <div className="trackInfo">
             {currentTrackInfo?.track?.album.name ?
                 (
-                    <Link className="albumCover" href={currentTrackInfo?.track?.album.uri}>
+                    <Link className="albumCover" href={currentTrackInfo?.track?.album.uri} key={currentTrackInfo?.track?.album.uri}>
                         <Image src={currentTrackInfo?.track.album.images[0].url} alt={''} fill={true} sizes="10vw" priority></Image>
                     </Link>
 
                 ) :
-                (<div className="albumPlaceholder">
+                (<div className="albumPlaceholder" key={'albumPlaceholder'}>
                 </div>)
             }
             <div className="infoStack">
@@ -31,8 +31,8 @@ export default function TrackInfo() {
                             const separator = index === 0 ? '' : ', ';
                             return (
                                 <>
-                                    <p key={artist.uri + 'name'} className="artistName">{separator}</p>
-                                    <Link key={artist.uri} href={artist.uri} className="artistName">{artist.name}</Link>
+                                    <p key={index + 'separator'} className="artistName">{separator}</p>
+                                    <Link key={index + 'artist'} href={artist.uri} className="artistName">{artist.name}</Link>
                                 </>
                             )
                         })}

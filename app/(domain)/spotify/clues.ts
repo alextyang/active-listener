@@ -30,7 +30,8 @@ function extractArtistClues(clues: ContextClueObject, track: TrackContextObject)
 }
 
 function extractAlbumClue(clues: ContextClueObject, track: TrackContextObject) {
-    if (!track?.album || !track?.track || !isTrackSingle(track?.track?.name, track?.album?.name)) return;
+    if (!track?.track || !track?.track.album) return;
+    if (isTrackSingle(track.track.name, track.track.album.name)) return addClue(clues, 'self-titled', CLUE_TYPE_ALBUM, track?.album);
     addClue(clues, track?.album?.name, CLUE_TYPE_ALBUM, track?.album);
 }
 

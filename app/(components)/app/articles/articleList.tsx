@@ -47,8 +47,8 @@ export function ArticleLink({ article, index }: { article: CompleteArticle, inde
                             ) : ''}
                     </div>
                     <span className="linkIcon">{relevanceToken}</span>
-                    <Link href={article.link}
-                        target="_blank" className="linkTitle">{article.title}</Link>
+                    <p className="linkTitle">{article.title}
+                    </p>
                 </PhotoLink>
 
             </div>

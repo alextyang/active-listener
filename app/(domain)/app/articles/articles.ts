@@ -11,13 +11,13 @@ import { compressString } from "../../utilities/compress";
 
 export async function getArticles(track: Track, updateSyncState?: (state: TrackSyncState) => void): Promise<(CompleteArticle)[]> {
     if (DEBUG_ARTICLE_SEARCH) console.log('[ARTICLE-SEARCH] Searching for articles for ' + track.name + ' ' + track.artists.map((artist) => artist.name).join(' '));
-    if (updateSyncState) updateSyncState({ state: 'articles', percent: -1 });
+    if (updateSyncState) updateSyncState({ state: 'articles' });
     let searchResults = await searchArticles(track);
 
     searchResults = filterArticlesForRelevance(searchResults, track);
 
     if (searchResults.length === 0) {
-        if (updateSyncState) updateSyncState({ state: 'idle', percent: -1 });
+        if (updateSyncState) updateSyncState({ state: 'articles', percent: 100 });
         if (DEBUG_ARTICLE_SEARCH) console.log('[ARTICLES-SEARCH] No articles found for', track);
         return [];
     }
@@ -32,7 +32,6 @@ export async function getArticles(track: Track, updateSyncState?: (state: TrackS
     const articles: (CompleteArticle | undefined)[] = [];
     await Promise.all(articleBatches.map((batch) => populateArticleBatch(batch, articles, articleCount, updateSyncState)));
 
-    if (updateSyncState) updateSyncState({ state: 'idle', percent: -1 });
     const filteredArticles = filterArticlesForRelevance(articles, track);
     if (!filteredArticles) return [];
     return filteredArticles as CompleteArticle[];

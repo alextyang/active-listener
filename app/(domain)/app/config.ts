@@ -11,6 +11,7 @@ export const DEFAULT_MARKET = 'US';
 export const PLAYLIST_REQUEST_DELAY = 1 * 100;
 export const PLAYLIST_FETCH_LIMIT = 50; // 50 or below
 export const MAX_USER_PLAYLISTS = 1000;
+export const PLAYLIST_SYNC_INTERVAL = 15 * 60 * 1000;
 
 
 // Now playing settings
@@ -20,7 +21,7 @@ export const TRACK_AUTO_POLL_INTERVAL = 600 * 1000;
 // Control settings
 export const PLAY_AFTER_SEEK = true;
 export const PLAY_AFTER_SKIP = true;
-export const CONTROL_RESYNC_LATENCY = 500;
+export const CONTROL_RESYNC_LATENCY = 1000;
 
 // Track metadata settings
 export const SLOW_METADATA_REQUEST_DELAY = 1 * 1000;
@@ -66,16 +67,16 @@ export const ARTICLE_POPULATE_API_ROUTE = 'article/populate';
 export const SUMMARY_API_ROUTE = 'summarize';
 
 // Log settings
-export const DEBUG_ACCOUNT = false;
-export const DEBUG_LIBRARY_PLAYLIST_SYNC = false;
-export const DEBUG_NOW_PLAYING = false;
-export const DEBUG_PLAYER_CONTROLS = false;
-export const DEBUG_SPOTIFY_METADATA_SYNC = false;
-export const DEBUG_COMPRESSION = false;
+export const DEBUG_ACCOUNT = true;
+export const DEBUG_LIBRARY_PLAYLIST_SYNC = true;
+export const DEBUG_NOW_PLAYING = true;
+export const DEBUG_PLAYER_CONTROLS = true;
+export const DEBUG_SPOTIFY_METADATA_SYNC = true;
+export const DEBUG_COMPRESSION = true;
 export const DEBUG_INTERNAL_API = false;
 export const DEBUG_FETCH = false;
 export const DEBUG_ARTICLE_SEARCH = false;
-export const DEBUG_ARTICLE_POPULATE = false;
+export const DEBUG_ARTICLE_POPULATE = true;
 export const DEBUG_ARTICLE_FILTER = false;
 export const DEBUG_SUMMARY_STREAM = false;
 export const DEBUG_SUMMARY_PARSE = false;

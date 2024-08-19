@@ -3,7 +3,7 @@ import { Album, Artist, SimplifiedTrack, Track } from "@spotify/web-api-ts-sdk";
 import Image from "next/image";
 import { useContext, useState } from "react";
 import { TrackContext, PlaybackContext, SpotifyClientContext, ActionContext } from "../../(domain)/app/context";
-import { Article } from "../../(domain)/app/types";
+import { CompleteArticle } from "../../(domain)/app/types";
 import { HoverMenuLink, HoverMenu } from "../utilities/hoverMenu";
 
 
@@ -117,17 +117,11 @@ export function TrackHoverMenu({ track, children }: { track: Track | SimplifiedT
     )
 }
 
-export function ArticleHoverMenu({ article, children }: { article: Article, children: React.ReactNode }) {
+export function ArticleHoverMenu({ article, children }: { article: CompleteArticle, children: React.ReactNode }) {
     const link = article?.link ?? '';
     const favicon = 'https://s2.googleusercontent.com/s2/favicons?domain=' + link.split('/')[2] + '&sz=256' ?? '';
     return (
-        // <HoverMenuLink className="textualHoverMenu articleHoverMenu" href={article?.link ?? ''} menu={(
-        //     <div className="textualIcon">
-        //         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#FFFFFF"><path d="M218.87-135.87q-34.48 0-58.74-24.26-24.26-24.26-24.26-58.74v-522.26q0-34.48 24.26-58.74 24.26-24.26 58.74-24.26H480v83H218.87v522.26h522.26V-480h83v261.13q0 34.48-24.26 58.74-24.26 24.26-58.74 24.26H218.87ZM394.41-336 336-394.41l346.72-346.72H576v-83h248.13V-576h-83v-106.72L394.41-336Z" /></svg>
-        //     </div>
-        // )}>
-        //     {children}
-        // </HoverMenuLink >
+
         <HoverMenuLink className="textualHoverMenu articleHoverMenu" href={article?.link ?? ''} menu={(
             <>
                 <div className="textualIcon">

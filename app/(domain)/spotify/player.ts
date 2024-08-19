@@ -1,5 +1,5 @@
 import { Devices, PlaybackState, SpotifyApi } from "@spotify/web-api-ts-sdk";
-import { PlaybackSyncState, TrackSyncState } from "../app/context";
+import { PlaybackSyncState, TrackContextObject, TrackSyncState } from "../app/context";
 import { DEBUG_NOW_PLAYING as LOG2, DEBUG_PLAYER_CONTROLS as LOG1, TRACK_AUTO_POLL_INTERVAL, TRACK_END_POLL_DELAY, PLAY_AFTER_SEEK, CONTROL_RESYNC_LATENCY } from "../app/config";
 
 // Controls
@@ -135,17 +135,17 @@ export function shouldDisplayControls(playbackState?: PlaybackState): boolean {
 export async function getPlaybackState(client?: SpotifyApi, setFetchState?: (state: PlaybackSyncState) => void): Promise<PlaybackState | undefined> {
     if (!client) return undefined;
 
-    if (setFetchState) setFetchState({ state: 'playback', percent: -1 });
+    if (setFetchState) setFetchState({ state: 'playback' });
     const playbackState = await fetchPlaybackState(client);
 
     if (!playbackState || !playbackState.item) {
         if (LOG2) console.log('[PLAYER-SYNC] No playback found.');
-        if (setFetchState) setFetchState({ state: 'idle', percent: -1 });
+        if (setFetchState) setFetchState({ state: 'waiting' });
         return undefined;
     }
 
     if (LOG2) console.log('[PLAYER-SYNC] Playback found.', playbackState);
-    if (setFetchState) setFetchState({ state: 'idle', percent: -1 });
+    if (setFetchState) setFetchState({ state: 'waiting' });
     return playbackState;
 }
 
@@ -159,10 +159,11 @@ async function fetchPlaybackState(client: SpotifyApi) {
     }
 }
 
-export function scheduleTrackEndUpdate(client?: SpotifyApi, playbackState?: PlaybackState, setPlaybackState?: (state?: PlaybackState) => void, setFetchState?: (state: PlaybackSyncState) => void) {
-    if (!client || !playbackState || !setPlaybackState) return undefined;
+export function scheduleTrackEndUpdate(client?: SpotifyApi, playbackState?: PlaybackState, setPlaybackState?: (state?: PlaybackState) => void, setCurrentTrack?: (value: TrackContextObject) => void, setFetchState?: (state: PlaybackSyncState) => void) {
+    if (!client || !playbackState || !setPlaybackState || !setCurrentTrack) return undefined;
     return scheduleAction(playbackState.item.duration_ms - playbackState.progress_ms + TRACK_END_POLL_DELAY, async () => {
         if (LOG2) console.log('[PLAYER-SYNC] Track ended, updating state.');
+        setCurrentTrack({});
         getPlaybackState(client, setFetchState).then(setPlaybackState);
     });
 }

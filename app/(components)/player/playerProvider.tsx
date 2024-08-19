@@ -12,8 +12,8 @@ import { useContext, useState, useRef, useCallback, useEffect } from "react";
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const spotifyClient = useContext(SpotifyClientContext);
 
-    const [playbackSyncState, setPlaybackSyncState] = useState<PlaybackSyncState>({ state: 'idle', percent: -1 });
-    const [trackSyncState, setTrackSyncState] = useState<TrackSyncState>({ state: 'idle', percent: -1 });
+    const [playbackSyncState, setPlaybackSyncState] = useState<PlaybackSyncState>({ state: 'waiting' });
+    const [trackSyncState, setTrackSyncState] = useState<TrackSyncState>({ state: 'waiting' });
 
     const trackTimeoutID = useRef<NodeJS.Timeout | undefined>(undefined);
     const trackUpdateIntervalID = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -22,28 +22,33 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const [queue, setQueue] = useState<Track[]>([]);
     const [currentTrack, setCurrentTrack] = useState<TrackContextObject>({});
     const [contextClues, setContextClues] = useState<ContextClueObject>({});
+
     const currentTrackID = useRef<string | undefined>(undefined);
 
-    const handleMetadataUpdate = useCallback(async (value: TrackContextObject) => {
+    const handleMetadataUpdate = useCallback((value: TrackContextObject): boolean => {
+        // if (value?.track?.id !== currentTrackID.current) {
+        //     console.log('[SPOTIFY-METADATA] Track changed, aborting metadata sync for ' + value?.track?.id + '===' + currentTrackID.current);
+        //     return false;
+        // }
         setCurrentTrack(value);
         setContextClues(extractMetadataContextClues(value));
+        return true;
     }, []);
 
     const handlePlaybackSync = useCallback(async () => {
         // if (document.hidden) return;
-
         const newState = await getPlaybackState(spotifyClient.api, setPlaybackSyncState);
         setPlaybackState(newState);
 
         if (newState && shouldSync(newState, currentTrackID.current, trackSyncState)) {
             currentTrackID.current = playbackState?.item.id;
-            await syncMetadata(spotifyClient.api, spotifyClient.user, newState, currentTrackID.current, trackSyncState, handleMetadataUpdate, setTrackSyncState);
+            await syncMetadata(spotifyClient.api, spotifyClient.user, newState, trackSyncState, handleMetadataUpdate, setTrackSyncState);
         }
         else
-            console.log('[SPOTIFY-METADATA] Track already loaded or loading:', playbackState);
+            console.log('[SPOTIFY-METADATA] Track already loaded or loading: old(' + currentTrackID.current + ') new(' + newState?.item.id + ') ...' + trackSyncState.state);
 
 
-    }, [spotifyClient.api, spotifyClient.user, playbackState, trackSyncState, handleMetadataUpdate]);
+    }, [spotifyClient.api, spotifyClient.user, trackSyncState, playbackState?.item.id, handleMetadataUpdate]);
 
 
     const handleTogglePlayback = useCallback(async () => {
@@ -51,10 +56,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }, [handlePlaybackSync, playbackState, spotifyClient.api]);
 
     const handleSkipToNext = useCallback(async () => {
+        setCurrentTrack({});
         await skipToNext(spotifyClient.api, playbackState, handlePlaybackSync, setPlaybackState);
     }, [handlePlaybackSync, playbackState, spotifyClient.api]);
 
     const handleSkipToPrevious = useCallback(async () => {
+        setCurrentTrack({});
         await skipToPrevious(spotifyClient.api, playbackState, handlePlaybackSync, setPlaybackState);
     }, [handlePlaybackSync, playbackState, spotifyClient.api]);
 
@@ -70,7 +77,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         clearTimeout(trackTimeoutID.current);
-        trackTimeoutID.current = scheduleTrackEndUpdate(spotifyClient.api, playbackState, setPlaybackState, setPlaybackSyncState);
+        trackTimeoutID.current = scheduleTrackEndUpdate(spotifyClient.api, playbackState, setPlaybackState, setCurrentTrack, setPlaybackSyncState);
     }, [playbackState, spotifyClient.api]);
 
     const handleVisibilityChange = useCallback(() => {
