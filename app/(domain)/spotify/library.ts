@@ -1,9 +1,9 @@
-import { Page, Playlist, SimplifiedPlaylist, SpotifyApi } from "@spotify/web-api-ts-sdk";
-import { DEBUG_LIBRARY_PLAYLIST_SYNC as LOG, MAX_USER_PLAYLISTS, PLAYLIST_FETCH_LIMIT, PLAYLIST_STORAGE_KEY, PLAYLIST_REQUEST_DELAY, PLAYLIST_SYNC_INTERVAL } from "../app/config";
+import { Page, Playlist, SimplifiedPlaylist, SpotifyApi, UserProfile } from "@spotify/web-api-ts-sdk";
+import { DEBUG_LIBRARY_PLAYLIST_SYNC as LOG, MAX_USER_PLAYLISTS, PLAYLIST_FETCH_LIMIT, PLAYLIST_STORAGE_KEY, PLAYLIST_REQUEST_DELAY, PLAYLIST_SYNC_INTERVAL, LIBRARY_SETTINGS } from "../app/config";
 import { LibrarySyncState, PlaylistDict } from "../app/context";
 import { loadLocalItem, saveLocalItem } from "../browser/localStorage";
+import { wait } from "../utilities/fetch";
 
-const wait = (m: number) => new Promise(r => setTimeout(r, m))
 
 export async function syncUserPlaylists(client: SpotifyApi | undefined, libraryState: LibrarySyncState, isManualRefresh: boolean, setLibraryState?: (state: LibrarySyncState) => void): Promise<PlaylistDict | undefined> {
     if (!client || libraryState.state !== 'waiting') {
@@ -204,4 +204,42 @@ function loadLibraryTimestamp(): number | undefined {
     if (timestamp)
         return timestamp;
     return;
+}
+
+export function getTracksPlaylists(trackID?: string, playlistDict?: PlaylistDict, user?: UserProfile): SimplifiedPlaylist[] {
+    if (!trackID || !playlistDict) return [];
+    const playlists = playlistDict.tracks[trackID]?.map((playlistID) => playlistDict.playlists[playlistID]).filter((playlist) => playlist !== undefined) ?? [];
+    return sortTrackPlaylists(playlists, user);
+}
+
+function sortTrackPlaylists(playlists: SimplifiedPlaylist[], user?: UserProfile): SimplifiedPlaylist[] {
+    return playlists.sort((a, b) => {
+        let aScore = 0, bScore = 0;
+
+        if (a.owner.display_name === 'Spotify')
+            aScore -= 1;
+        if (b.owner.display_name === 'Spotify')
+            bScore -= 1;
+
+        if (a.name.includes('Mix'))
+            aScore -= 1;
+        if (b.name.includes('Mix'))
+            bScore -= 1;
+
+        if (user && a.owner.id === user.id)
+            aScore += 1;
+        if (user && b.owner.id === user.id)
+            bScore += 1;
+
+        return bScore - aScore;
+    });
+}
+
+export function getLoadingMessage(libraryState: LibrarySyncState, playlistDict?: PlaylistDict): string {
+    if (libraryState.state === 'waiting' && playlistDict)
+        return LIBRARY_SETTINGS.LOADING_MESSAGES['done'];
+    else if (libraryState.state === 'playlists')
+        return LIBRARY_SETTINGS.LOADING_MESSAGES['playlists'] + ' (' + libraryState.percent + '%)';
+    else
+        return LIBRARY_SETTINGS.LOADING_MESSAGES[libraryState.state] ?? '';
 }

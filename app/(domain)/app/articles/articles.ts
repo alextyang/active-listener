@@ -1,15 +1,22 @@
-import { ARTICLE_RELEVANCE_ORDER, ARTICLE_SEARCH_API_ROUTE, BLACKLISTED_KEYWORDS, CURRENT_URL, DEBUG_ARTICLE_FILTER, INTERNAL_FETCH_SETTINGS, MINIMUM_WORD_COUNT, WHITELISTED_KEYWORDS, ARTICLE_POPULATE_API_ROUTE, ARTICLE_BATCH_SIZE, DEBUG_ARTICLE_POPULATE, DEBUG_ARTICLE_SEARCH } from "../config";
-import { ArticleSearchResult, CompleteArticle, SimpleArticle } from "@/app/(domain)/app/types";
+import { ARTICLE_RELEVANCE_ORDER, ARTICLE_SEARCH_API_ROUTE, BLACKLISTED_KEYWORDS, CURRENT_URL, DEBUG_ARTICLE_FILTER, INTERNAL_FETCH_SETTINGS, MINIMUM_WORD_COUNT, WHITELISTED_KEYWORDS, ARTICLE_POPULATE_API_ROUTE, ARTICLE_BATCH_SIZE, DEBUG_ARTICLE_POPULATE, DEBUG_ARTICLE_SEARCH, CACHE_ARTICLES_KEY, DEFAULT_ARTICLE_BG, ARTICLE_BG_DARKEN, DEFAULT_ARTICLE_FG, ARTICLE_FG_LIGHTEN, ARTICLE_BG_GRADIENT_OFFSET, ARTICLE_FG_GRADIENT_OFFSET, ARTICLE_BG_OPACITY, ARTICLE_FG_OPACITY, ARTICLE_RELEVANCE_TOKENS, DEFAULT_ARTICLE_RELEVANCE_TOKEN } from "../config";
+import { ArticleSearchResult, CompleteArticle, ReadabilityResult, SimpleArticle } from "@/app/(domain)/app/types";
 import { Track } from "@spotify/web-api-ts-sdk";
 import { TrackSyncState } from "../context";
 import { fetchInternalResource, fetchResource } from "../../utilities/fetch";
 import { compressString } from "../../utilities/compress";
+import { loadTrackProperty, savePropertyToTrack } from "../../site/cache";
+import { Palette, Swatch, Vec3 } from "node-vibrant/lib/color";
+import { createGradientStyleString, darkenRGB, lightenRGB, rgbaToStyleString } from "../../utilities/colors";
 
-
-
-
-
+// FETCHING
 export async function getArticles(track: Track, updateSyncState?: (state: TrackSyncState) => void): Promise<(CompleteArticle)[]> {
+    const cachedArticles = await loadTrackProperty<CompleteArticle[]>(track.id, CACHE_ARTICLES_KEY);
+    if (cachedArticles) {
+        if (DEBUG_ARTICLE_SEARCH) console.log('[ARTICLE-SEARCH] Found cached articles for ' + track.name + ' ' + track.artists.map((artist) => artist.name).join(' '));
+        if (updateSyncState) updateSyncState({ state: 'articles', percent: 100 });
+        return cachedArticles;
+    }
+
     if (DEBUG_ARTICLE_SEARCH) console.log('[ARTICLE-SEARCH] Searching for articles for ' + track.name + ' ' + track.artists.map((artist) => artist.name).join(' '));
     if (updateSyncState) updateSyncState({ state: 'articles' });
     let searchResults = await searchArticles(track);
@@ -19,6 +26,7 @@ export async function getArticles(track: Track, updateSyncState?: (state: TrackS
     if (searchResults.length === 0) {
         if (updateSyncState) updateSyncState({ state: 'articles', percent: 100 });
         if (DEBUG_ARTICLE_SEARCH) console.log('[ARTICLES-SEARCH] No articles found for', track);
+        savePropertyToTrack<CompleteArticle[]>(track.id, CACHE_ARTICLES_KEY, []);
         return [];
     }
 
@@ -32,8 +40,23 @@ export async function getArticles(track: Track, updateSyncState?: (state: TrackS
     const articles: (CompleteArticle | undefined)[] = [];
     await Promise.all(articleBatches.map((batch) => populateArticleBatch(batch, articles, articleCount, updateSyncState)));
 
-    const filteredArticles = filterArticlesForRelevance(articles, track);
-    if (!filteredArticles) return [];
+    const filteredArticles = filterArticlesForRelevance(articles, track) as CompleteArticle[];
+    if (!filteredArticles) {
+        if (DEBUG_ARTICLE_POPULATE) console.log('[ARTICLE-POPULATE] No articles approved for ' + track.name + ' ' + track.artists.map((artist) => artist.name).join(' '));
+        if (updateSyncState) updateSyncState({ state: 'articles', percent: 100 });
+        savePropertyToTrack<CompleteArticle[]>(track.id, CACHE_ARTICLES_KEY, []);
+        return [];
+    }
+
+    const truncatedArticles = filteredArticles.map((article) => {
+        return {
+            ...article,
+            content: '',
+            textContent: '',
+        };
+    });
+    savePropertyToTrack<CompleteArticle[]>(track.id, CACHE_ARTICLES_KEY, truncatedArticles);
+
     return filteredArticles as CompleteArticle[];
 }
 
@@ -58,6 +81,8 @@ async function searchArticles(track: Track): Promise<ArticleSearchResult[]> {
     return results;
 }
 
+
+// TYPE CONVERSIONS
 function simplifyArticleResults(articles: (ArticleSearchResult)[]): ArticleSearchResult[] {
     return articles.map((article) => {
         if (!article) return undefined;
@@ -70,9 +95,22 @@ function simplifyArticleResults(articles: (ArticleSearchResult)[]): ArticleSearc
     }).filter((article) => article !== undefined) as ArticleSearchResult[];
 }
 
+export function simplifyArticles(articles: CompleteArticle[]): SimpleArticle[] {
+    return articles.map((article) => simplifyArticle(article));
+}
+
+export function simplifyArticle(article: CompleteArticle): SimpleArticle {
+    return {
+        title: article.title,
+        byline: article.byline,
+        siteName: article.siteName,
+        compressedContent: compressString(article.content)
+    }
+}
 
 
 
+// LIST MANAGEMENT
 export function filterArticlesForRelevance(articles?: (ArticleSearchResult | CompleteArticle)[], track?: Track): (ArticleSearchResult | CompleteArticle)[] {
     if (!articles || !track) return [];
     const filteredArticles: (ArticleSearchResult | CompleteArticle)[] = [];
@@ -115,12 +153,6 @@ export function filterArticlesForRelevance(articles?: (ArticleSearchResult | Com
     return sortArticles(filteredArticles);
 }
 
-export function assignType(article: (ArticleSearchResult | CompleteArticle)): string {
-    if (!article) return 'article';
-    if (article.link.includes('wikipedia')) return 'wikipedia';
-    if (article.link.includes('genius')) return 'genius';
-    return 'article';
-}
 
 function sortArticles(articles: (ArticleSearchResult | CompleteArticle)[]): (ArticleSearchResult | CompleteArticle)[] {
     return articles.sort((a, b) => {
@@ -150,22 +182,108 @@ function sortArticles(articles: (ArticleSearchResult | CompleteArticle)[]): (Art
                 else if (a?.wordCount < b?.wordCount)
                     bScore -= 0.1;
             }
-
         }
-
         return aScore - bScore;
     });
 }
 
-export function simplifyArticles(articles: CompleteArticle[]): SimpleArticle[] {
-    return articles.map((article) => simplifyArticle(article));
+
+
+// CONTENT RULES
+export function assignType(article: (ArticleSearchResult | CompleteArticle)): string {
+    if (!article) return 'article';
+    if (article.link.includes('wikipedia')) return 'wikipedia';
+    if (article.link.includes('genius')) return 'genius';
+    return 'article';
 }
 
-export function simplifyArticle(article: CompleteArticle): SimpleArticle {
-    return {
-        title: article.title,
-        byline: article.byline,
-        siteName: article.siteName,
-        compressedContent: compressString(article.content)
+export function trimTitle(searchResultTitle: string, readabilityTitle: string, siteName: string): string {
+    let title = searchResultTitle;
+    if (readabilityTitle && readabilityTitle.length > 1) title = readabilityTitle;
+    if (title.toLowerCase().includes(siteName.toLowerCase())) {
+        title = title.substring(0, title.toLowerCase().indexOf(siteName.toLowerCase()));
     }
+    if (title.includes(' - ')) title = title.split(' - ')[0];
+    if (title.includes(' | ')) title = title.split(' | ')[0];
+    return title.trim();
 }
+
+export function trimWikipediaText(readability: ReadabilityResult): ReadabilityResult {
+    if (!readability) return undefined;
+    readability.textContent = readability.textContent.split('References[edit]')[0];
+    readability.content = readability.content.split('<span id="References">References</span>')[0];
+    return readability;
+}
+
+export function trimByline(byline?: string): string {
+    if (!byline) return '';
+    return byline.replace(/[^\w\s]/gi, '').replace('By', '').replace('by', '').replace('Words', '').trim();
+}
+
+export function trimSiteName(link: string, siteName?: string): string {
+    return siteName && siteName.length > 1 ? siteName : (link.split('/')[2].replace('www.', '').split('.')[0].toLocaleUpperCase())
+}
+
+
+// RENDER RULES
+export function getRelevanceToken(relevance: string): string {
+    return (ARTICLE_RELEVANCE_TOKENS[relevance] ?? DEFAULT_ARTICLE_RELEVANCE_TOKEN);
+}
+
+export function getArticleNumber(index: number): string {
+    return String(index + 1).padStart(2, '0');
+}
+
+export function getTimeToRead(wordCount?: number): string {
+    if (!wordCount) return '';
+    return (Math.floor(wordCount / 238)) + ':' + (Math.floor((wordCount % 238) / (238 / 60)).toString().padStart(2, '0'));
+}
+
+export function getArticleTextGradient(article: CompleteArticle, trackPalette: Palette | undefined, index: number): string {
+    if (article.gradient) return article.gradient;
+    return getDefaultArticleForeground(index, trackPalette);
+}
+
+export function getArticleBackgroundGradient(trackPalette: Palette | undefined, index: number): string {
+    return getDefaultArticleBackground(index, trackPalette);
+}
+
+
+// COLORS
+export function getDefaultArticleBackground(index: number, trackPalette?: Palette) {
+    if (!trackPalette) return DEFAULT_ARTICLE_BG;
+
+    const options = Object.values(trackPalette).filter((swatch) => swatch !== undefined && swatch.rgb);
+    if (options.length === 0) return DEFAULT_ARTICLE_BG;
+
+    const swatch = options[index % options.length];
+    if (!swatch || !swatch.rgb) return DEFAULT_ARTICLE_BG;
+
+    const rgb = swatch.rgb.flat();
+    const darkened = darkenRGB(rgb, ARTICLE_BG_DARKEN);
+    const darkened2 = darkenRGB(rgb, ARTICLE_BG_GRADIENT_OFFSET);
+    const angle = index * 200 % 360;
+
+    return createGradientStyleString(rgbaToStyleString([...darkened, ARTICLE_BG_OPACITY]), rgbaToStyleString([...darkened2, ARTICLE_BG_OPACITY]), angle, 0, 200);
+}
+
+export function getDefaultArticleForeground(index: number, trackPalette?: Palette) {
+    if (!trackPalette) return DEFAULT_ARTICLE_FG;
+
+    const options = Object.values(trackPalette).filter((swatch) => swatch !== undefined && swatch.rgb);
+    if (options.length === 0) return DEFAULT_ARTICLE_FG;
+
+    const swatch = options[index % options.length];
+    if (!swatch || !swatch.rgb) return DEFAULT_ARTICLE_FG;
+
+    const rgb = swatch.rgb.flat();
+    const lightened = lightenRGB(rgb, ARTICLE_FG_LIGHTEN);
+    const lightened2 = lightenRGB(rgb, ARTICLE_FG_GRADIENT_OFFSET);
+    const angle = index * 200 % 360 + 180;
+
+    return createGradientStyleString(rgbaToStyleString([...lightened, ARTICLE_FG_OPACITY]), rgbaToStyleString([...lightened2, ARTICLE_FG_OPACITY]), angle, 0, 100);
+}
+
+
+
+

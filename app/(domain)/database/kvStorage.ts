@@ -1,40 +1,41 @@
-// "use server";
+"use server";
 
-// import { kv } from '@vercel/kv';
-// import LZString from 'lz-string';
-// import { PlaylistTrackDict, PlaylistIDDict } from './(domain)/context';
+import { kv } from '@vercel/kv';
+import { compressString, decompressString } from '../utilities/compress';
 
-// export async function saveUsersPlaylists(userId: string, playlistTrackDict: PlaylistTrackDict, playlistIDDict: PlaylistIDDict) {
-//     const combinedDict = { playlistTrackDict: playlistTrackDict, playlistIDDict: playlistIDDict };
-//     const compressedObj = { combinedDict: LZString.compress(JSON.stringify(combinedDict)) };
+export async function loadItem<T>(key: string): Promise<T | undefined> {
+    let compressedValue;
 
+    try {
+        compressedValue = await kv.get<{ item: string }>(key);
+    } catch (error) {
+        console.error('[KV-DB] Error getting \'' + key + '\' value:', error);
+    }
 
-//     try {
-//         await kv.set<string>('userPlaylistDict:' + userId, JSON.stringify(compressedObj));
-//         console.log('[KV] Saved user ' + userId + ' playlists:', Object.keys(combinedDict.playlistIDDict).length);
-//     }
-//     catch (e) {
-//         console.error('[KV] Error setting user ' + userId + ' playlists:', e);
-//     }
-// }
+    if (!compressedValue)
+        return undefined;
 
-// export async function loadUsersPlaylists(userId: string): Promise<{ playlistTrackDict: PlaylistTrackDict, playlistIDDict: PlaylistIDDict } | undefined> {
-//     const res = await kv.get<{ combinedDict: string }>('userPlaylistDict:' + userId);
-//     if (!res) {
-//         console.log('[KV] No playlists found for user ' + userId);
-//         return undefined;
-//     }
-//     // console.log(res);
+    const value = decompressString(compressedValue.item);
 
-//     let combinedDict;
-//     try {
-//         const decompressedObj = JSON.parse(LZString.decompress(res.combinedDict));
-//         combinedDict = decompressedObj as { playlistTrackDict: PlaylistTrackDict, playlistIDDict: PlaylistIDDict };
-//     } catch (error) {
-//         console.error('[KV] Error parsing user ' + userId + ' playlists:', error);
-//         return undefined;
-//     }
+    try {
+        return JSON.parse(value) as T;
 
-//     console.log('[KV] Loaded user ' + userId + ' playlists:', Object.keys(combinedDict.playlistIDDict).length);
-//     return combinedDict;
-// }
+    } catch (error) {
+        console.error('[KV-DB] Error parsing stored \'' + key + '\' value:', error);
+        return undefined;
+    }
+}
+
+export async function saveItem<T>(key: string, value: T) {
+    const compressedValue = compressString(JSON.stringify(value));
+
+    try {
+        await kv.set<string>(key, JSON.stringify({ item: compressedValue }));
+    }
+    catch (e) {
+        console.error('[KV-DB] Error setting \'' + key + '\' value:', e);
+    }
+
+    console.log('[KV-DB] Saved \'' + key + '\' value:', value);
+
+}

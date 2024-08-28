@@ -1,6 +1,7 @@
-import { Album, Artist, AudioFeatures, PlaybackState, SimplifiedPlaylist, SpotifyApi, TopTracksResult, Track, TrackItem, UserProfile } from "@spotify/web-api-ts-sdk";
-import { Dispatch, SetStateAction, createContext } from "react";
+import { Album, Artist, AudioFeatures, Context, PlaybackState, SimplifiedPlaylist, SimplifiedTrack, SpotifyApi, TopTracksResult, Track, TrackItem, UserProfile } from "@spotify/web-api-ts-sdk";
+import { SetStateAction, createContext } from "react";
 import { CompleteArticle } from "./types";
+import { Palette } from "node-vibrant/lib/color";
 
 
 export type PlaylistDict = { tracks: { [key: string]: string[] }, playlists: { [key: string]: SimplifiedPlaylist } };
@@ -21,8 +22,13 @@ export const SpotifyClientContext = createContext<SpotifyClientObject>({
 export type PlaybackContextObject = { playbackState?: PlaybackState };
 export const PlaybackContext = createContext<PlaybackContextObject>({});
 
-export type QueueContextObject = { queue?: Track[] };
-export const QueueContext = createContext<QueueContextObject>({});
+
+// export type QueueContextObject = { dynamicQueue: SimplifiedTrack[], staticQueue?: SimplifiedTrack[], history?: Track[], overlayWidth: number, isOverlayOpen: boolean, canUndo: boolean, canRedo: boolean, actions?: { move: (trackIndices: number[], position: number) => void, add: (track: Track[]) => void, remove: (trackIndices: number[]) => void, playNow: (trackIndex: number) => void, skipTo: (trackIndex: number) => void, undo: () => void, redo: () => void } };
+// export const DEFAULT_QUEUE_CONTEXT: QueueContextObject = { dynamicQueue: [], overlayWidth: QUEUE_OVERLAY_DEFAULT_SIZE, isOverlayOpen: false, canUndo: false, canRedo: false };
+export type QueueContextObject = { queue?: SimplifiedTrack[], history: SimplifiedTrack[] };
+export const DEFAULT_QUEUE_CONTEXT: QueueContextObject = { queue: [], history: [] };
+export const QueueContext = createContext<QueueContextObject>(DEFAULT_QUEUE_CONTEXT);
+
 
 export type ActionContextObject = { togglePlayback: () => Promise<void>, setProgress: (percent: number) => void, requestUpdate: () => void, skipToNext: () => void, skipToPrevious: () => void };
 export const ActionContext = createContext<ActionContextObject>({
@@ -41,7 +47,7 @@ export const ActionContext = createContext<ActionContextObject>({
     }
 });
 
-export type TrackContextObject = { track?: Track, album?: Album, artists?: Artist[], features?: AudioFeatures, siblingAlbums?: Album[], topTracks?: TopTracksResult[] } | null;
+export type TrackContextObject = { track?: Track, album?: Album, artists?: Artist[], features?: AudioFeatures, siblingAlbums?: Album[], topTracks?: TopTracksResult[], palette?: Palette } | null;
 export const TrackContext = createContext<TrackContextObject>({});
 
 export type ContextClueObject = { [key: string]: { type: string, value: any } };

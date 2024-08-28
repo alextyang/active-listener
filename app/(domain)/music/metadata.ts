@@ -20,8 +20,8 @@ export function extractCommonName(trackName: string) {
         return trackName.substring(0, trackName.indexOf('(')).trim();
     else if (trackName.includes('['))
         return trackName.substring(0, trackName.indexOf('[')).trim();
-    else if (trackName.includes('-'))
-        return trackName.substring(0, trackName.indexOf('-')).trim();
+    else if (trackName.includes(' -'))
+        return trackName.substring(0, trackName.indexOf(' -')).trim();
     else return undefined;
 }
 

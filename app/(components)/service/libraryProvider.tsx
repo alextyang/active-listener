@@ -14,8 +14,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setLibraryState(state);
     }, []);
 
-    const handleLibrarySync = useCallback((manual: boolean) => {
-        syncUserPlaylists(spotifyClient.api, libraryState, manual, handleLibraryStateChange).then((dict) => {
+    const handleLibrarySync = useCallback((force: boolean) => {
+        syncUserPlaylists(spotifyClient.api, libraryState, force, handleLibraryStateChange).then((dict) => {
             setPlaylistDict(dict);
         });
     }, [handleLibraryStateChange, libraryState, spotifyClient]);

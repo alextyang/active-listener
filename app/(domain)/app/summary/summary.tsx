@@ -1,21 +1,36 @@
 import { readStreamableValue, StreamableValue } from "ai/rsc";
 import { fetchInternalResource } from "../../utilities/fetch";
 import { simplifyArticles } from "../articles/articles";
-import { CLUE_TYPE_ALBUM, CLUE_TYPE_ARTICLE, CLUE_TYPE_ARTIST, CLUE_TYPE_TRACK, DEBUG_CLUES, DEBUG_SUMMARY_PARSE as LOG_P, DEBUG_SUMMARY_STREAM as LOG_S, SUMMARY_API_ROUTE } from "../config";
+import { CACHE_SUMMARY_KEY, CLUE_TYPE_ALBUM, CLUE_TYPE_ARTICLE, CLUE_TYPE_ARTIST, CLUE_TYPE_TRACK, DEBUG_CLUES, DEBUG_SUMMARY_PARSE as LOG_P, DEBUG_SUMMARY_STREAM as LOG_S, SUMMARY_API_ROUTE, SUMMARY_DEFAULT_COLOR, SUMMARY_OVERLAY_OPACITY } from "../config";
 import { ContextClueObject, TrackContextObject, TrackSyncState } from "../context";
 import { CompleteArticle } from "../types";
 import { Album, Artist, Track } from "@spotify/web-api-ts-sdk";
-import { AlbumHoverMenu, ArticleHoverMenu, ArtistHoverMenu, TrackHoverMenu } from "@/app/(components)/music/textualHoverMenu";
 import { startSummaryStream } from "@/app/(api)/summarize/action";
 import { extractCommonName } from "../../music/metadata";
+import { loadTrackProperty, savePropertyToTrack } from "../../site/cache";
+import { isAlphaNumeric } from "../../utilities/text";
+import { rgbaToStyleString } from "../../utilities/colors";
+import { InlineAlbumTooltip, InlineArticleTooltip, InlineArtistTooltip, InlineTrackTooltip } from "@/app/(components)/app/summary/inlineTooltip";
 
+// FETCHING
 export async function streamSummary(track: Track, articles: CompleteArticle[] | undefined, clues: ContextClueObject, updateSummary: (value: React.ReactNode[], id: string) => void, getCurrentTrackID: () => string, syncState: TrackSyncState, updateSyncState?: (state: TrackSyncState) => void): Promise<void> {
     if (!track) return updateSummary([], '');
+
+    const cachedSummary = await loadTrackProperty<string>(track.id, CACHE_SUMMARY_KEY);
+    if (cachedSummary) {
+        if (LOG_S) console.log('[SUMMARY-STREAM] Found cached summary for ' + track.name);
+        if (updateSyncState) updateSyncState({ state: 'waiting', percent: -1 });
+        return updateSummary(parseSummary(cachedSummary, clues, track), track.id);
+    }
+
     if (!articles || (articles.length === 0)) {
         if ((syncState.state === 'articles' && syncState.percent === 100)) {
             if (updateSyncState) updateSyncState({ state: 'waiting', percent: -1 });
             if (LOG_S) console.log('[SUMMARY-STREAM] Giving no material summary for ' + track.name);
-            return updateSummary(parseSummary('No reviews found for ' + track.name + ' by ' + track.artists.map(artist => artist.name).join(', ') + ' from ' + track.album.name + '.', clues, track), track.id);
+
+            const noMaterialSummary = 'No reviews found for ' + track.name + ' by ' + track.artists.map(artist => artist.name).join(', ') + ' from ' + track.album.name + '.';
+            savePropertyToTrack<string>(track.id, CACHE_SUMMARY_KEY, noMaterialSummary);
+            return updateSummary(parseSummary(noMaterialSummary, clues, track), track.id);
         }
         if (LOG_S) console.log('[SUMMARY-STREAM] Waiting for articles for ' + track.name);
         return;
@@ -38,13 +53,16 @@ export async function streamSummary(track: Track, articles: CompleteArticle[] | 
         if (LOG_P) console.log('[SUMMARY-STREAM] Updated summary for ' + track.name + ' with ' + summaryString.length + ' characters');
     }
 
+    savePropertyToTrack<string>(track.id, CACHE_SUMMARY_KEY, summaryString);
+
     if (updateSyncState) updateSyncState({ state: 'waiting', percent: -1 });
+
+    return;
 }
 
 function parseSummary(str: string, originalClues: ContextClueObject, track: Track): React.ReactNode[] {
     if (!str || str.length === 0) return [];
     str = ' ' + cleanSummary(str);
-    str = standardizeTrackNames(str, Object.keys(originalClues));
 
     let index = 0;
     const clues = { ...originalClues };
@@ -98,17 +116,6 @@ function cleanSummary(str: string): string {
     return str.replaceAll('"', '').replaceAll('\' ', ' ').replaceAll(' \'', ' ').replaceAll('**', '').trim();
 }
 
-function standardizeTrackNames(str: string, trackNames: string[]): string {
-    for (const trackName of trackNames)
-        str = standardizeTrackName(str, trackName);
-    return str;
-}
-
-function standardizeTrackName(str: string, trackName: string): string {
-    if (str.includes(trackName)) return str;
-    return str.replace(extractCommonName(trackName) ?? trackName, trackName);
-}
-
 function getClue(str: string, from: number, clues: ContextClueObject): string | undefined {
     if (str[from] !== ' ') return undefined;
 
@@ -132,37 +139,34 @@ function wrapParagraphNodes(index: number, children: React.ReactNode[]) {
 
 function createClueNode(name: string, clue: { type: string, value: any }, index: number) {
     if (clue.type === CLUE_TYPE_TRACK)
-        return (<TrackHoverMenu key={index + 'clue'} track={clue.value as Track}>
+        return (<InlineTrackTooltip key={index + 'clue'} track={clue.value as Track}>
             <span>{name}</span>
-        </TrackHoverMenu>);
+        </InlineTrackTooltip>);
     else if (clue.type === CLUE_TYPE_ARTIST)
-        return (<ArtistHoverMenu key={index + 'clue'} artist={clue.value as Artist}>
+        return (<InlineArtistTooltip key={index + 'clue'} artist={clue.value as Artist}>
             <span>{name}</span>
-        </ArtistHoverMenu>);
+        </InlineArtistTooltip>);
     else if (clue.type === CLUE_TYPE_ALBUM)
-        return (<AlbumHoverMenu key={index + 'clue'} album={clue.value as Album}>
+        return (<InlineAlbumTooltip key={index + 'clue'} album={clue.value as Album}>
             <span>{name}</span>
-        </AlbumHoverMenu>);
+        </InlineAlbumTooltip>);
     else if (clue.type === CLUE_TYPE_ARTICLE)
-        return (<ArticleHoverMenu key={index + 'clue'} article={clue.value as CompleteArticle}>
+        return (<InlineArticleTooltip key={index + 'clue'} article={clue.value as CompleteArticle}>
             <span>{name}</span>
-        </ArticleHoverMenu>);
+        </InlineArticleTooltip>);
     else
         console.error('Unknown clue type parsed:', clue);
 
 }
 
-// from https://stackoverflow.com/questions/4434076/best-way-to-alphanumeric-check-in-javascript
-function isAlphaNumeric(str: string): boolean {
-    var code, i, len;
 
-    for (i = 0, len = str.length; i < len; i++) {
-        code = str.charCodeAt(i);
-        if (!(code > 47 && code < 58) && // numeric (0-9)
-            !(code > 64 && code < 91) && // upper alpha (A-Z)
-            !(code > 96 && code < 123)) { // lower alpha (a-z)
-            return false;
-        }
-    }
-    return true;
-};
+// RENDERING
+export function getSummaryOverlayColor(trackContext: TrackContextObject): string {
+    if (!trackContext || !trackContext.palette) return SUMMARY_DEFAULT_COLOR;
+
+    const rgb = trackContext.palette.Muted?.rgb.flat();
+    if (!rgb) return SUMMARY_DEFAULT_COLOR;
+
+    return rgbaToStyleString([...rgb, SUMMARY_OVERLAY_OPACITY]);
+}
+

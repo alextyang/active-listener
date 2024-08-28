@@ -8,6 +8,7 @@
   --green: #1db954;
 
   --hover-delay: 0.16s;
+  --subtle-hover-delay: 1s;
 
   --x-margin: 3.2rem;
   --y-spacing: 2.4rem;
@@ -222,6 +223,15 @@ select:focus {
         height: 100%;
         aspect-ratio: 1;
 
+        .placeholderImage {
+          position: relative;
+          aspect-ratio: 1;
+          width: 100%;
+          height: 100%;
+          background-color: var(--grey);
+          opacity: 0.6;
+        }
+
         svg {
           width: 100%;
           height: 100%;
@@ -239,7 +249,7 @@ select:focus {
         right: -2.5rem;
         padding: 0.3rem 0.5rem 0.3rem 0.3rem;
 
-        img {
+        .image {
           border-radius: 1.5rem;
           overflow: hidden;
         }
@@ -261,7 +271,7 @@ select:focus {
         border-top-left-radius: 0.5rem;
         border-bottom-left-radius: 0.5rem;
 
-        img {
+        .image {
           border-radius: 0.2rem;
           overflow: hidden;
           padding: 0rem;
@@ -284,7 +294,7 @@ select:focus {
         border-top-left-radius: 0.5rem;
         border-bottom-left-radius: 0.5rem;
 
-        img {
+        .image {
           border-radius: 0.2rem;
           overflow: hidden;
           padding: 0rem;
@@ -304,7 +314,7 @@ select:focus {
         right: -2.5rem;
         padding: 0.3rem 0.5rem 0.3rem 0.3rem;
 
-        img {
+        .image {
           border-radius: 1.5rem;
           overflow: hidden;
           background-color: var(--white);
@@ -460,6 +470,9 @@ select:focus {
     .timelineProgress {
       background-color: white;
 
+      transform-origin: left;
+      width: 100%;
+
       border-radius: 2rem;
       overflow: hidden;
       height: 100%;
@@ -475,6 +488,9 @@ select:focus {
     .manualProgress {
       opacity: 0;
       background-color: white;
+
+      transform-origin: left;
+      width: 100%;
 
       border-radius: 2rem;
       overflow: hidden;
@@ -843,11 +859,9 @@ select:focus {
       .refreshIcon {
         padding: 0.05rem;
         fill: var(--grey);
-
-        &.refreshIconRotating {
-          animation: rotate 1s linear infinite;
-
-        }
+        transition: transform 0.7s linear, opacity 0.2s ease-in-out;
+        transform: rotate(0deg);
+        opacity: 1;
       }
     }
   }
@@ -1032,6 +1046,8 @@ select:focus {
 
   .photoText {
     position: relative;
+    display: block;
+    height: 100%;
 
     .imageWrapper {
       position: absolute;
@@ -1053,9 +1069,8 @@ select:focus {
         object-fit: cover;
         background-color: var(--grey);
         filter: blur(0.01rem);
-        opacity: 0;
-        transition: opacity var(--hover-delay) ease-in-out;
-
+        opacity: 0.14;
+        transition: opacity var(--subtle-hover-delay) ease-in-out;
       }
 
       .placeholder {
@@ -1065,20 +1080,20 @@ select:focus {
         right: 0;
         bottom: 0;
 
-        opacity: 0;
+        opacity: 0.5;
 
         background-color: var(--dark-grey);
-        transition: opacity var(--hover-delay) ease-in-out;
+        transition: opacity var(--subtle-hover-delay) ease-in-out;
 
       }
     }
 
     &:hover .imageWrapper .image {
-      opacity: 0.16;
+      opacity: 0.2;
     }
 
     &:hover .imageWrapper .placeholder {
-      opacity: 1;
+      opacity: 0.8;
     }
 
 
@@ -1109,14 +1124,16 @@ select:focus {
     .articles {
       position: relative;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(42rem, 1fr));
-      row-gap: 3.6rem;
-      column-gap: 4.8rem;
+      grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
+      row-gap: 5.4rem;
+      column-gap: 4.6rem;
+
+      justify-items: stretch;
 
       padding-left: 1.6rem;
       padding-right: 1.6rem;
 
-      margin-top: var(--content-gap);
+      margin-top: 1.4rem;
 
       @media screen and (max-width: 48rem) {
         display: flex;
@@ -1145,6 +1162,7 @@ select:focus {
           color: rgba(45, 45, 45, 0.6);
           pointer-events: none;
 
+
           span {
             display: inline-block;
             font-size: 1.6rem;
@@ -1156,6 +1174,7 @@ select:focus {
             display: block;
             font-weight: 400;
             text-decoration: none !important;
+
           }
         }
 
@@ -1207,6 +1226,8 @@ select:focus {
 
           text-underline-offset: 0.32rem;
           text-decoration-thickness: 0.12rem;
+
+
         }
 
         &:hover .linkTitle {
@@ -1230,11 +1251,11 @@ select:focus {
         }
       }
 
-      .articleLink:first-child {
+      /* .articleLink:first-child {
         position: absolute;
         left: 2rem;
         top: -4.8rem;
-      }
+      } */
 
 
 

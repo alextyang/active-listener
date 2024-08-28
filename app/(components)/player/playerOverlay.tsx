@@ -1,7 +1,7 @@
 import Link from "next/link";
-import PlaybackBackground from "../music/track/background";
+import PlayerBackground from "../music/track/background";
 import GenreList from "../music/track/genreList";
-import TrackInfo from "../music/track/trackInfo";
+import CurrentTrackInfo from "../music/track/currentTrackInfo";
 import { SpotifyLogoWhite } from "../service/spotifyLogo";
 import ControlIcons from "./controls/controlIcons";
 import Controls from "./controls/controls";
@@ -10,8 +10,8 @@ import Timeline from "./controls/timeline";
 export function PlayerOverlay() {
     return (
         <div className="player">
-            <PlaybackBackground />
-            <TrackInfo />
+            <PlayerBackground />
+            <CurrentTrackInfo />
             <Timeline />
             <Controls />
         </div>

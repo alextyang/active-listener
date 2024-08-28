@@ -31,7 +31,7 @@ function extractArtistClues(clues: ContextClueObject, track: TrackContextObject)
 
 function extractAlbumClue(clues: ContextClueObject, track: TrackContextObject) {
     if (!track?.track || !track?.track.album) return;
-    if (isTrackSingle(track.track.name, track.track.album.name)) return addClue(clues, 'self-titled', CLUE_TYPE_ALBUM, track?.album);
+    if (track.album?.name === track.track?.name) return addClue(clues, track?.album?.name + ' ', CLUE_TYPE_ALBUM, track?.album);
     addClue(clues, track?.album?.name, CLUE_TYPE_ALBUM, track?.album);
 }
 
@@ -40,6 +40,8 @@ function extractSiblingAlbumClues(clues: ContextClueObject, track: TrackContextO
     track.siblingAlbums.forEach((album) => {
         if (!isSelfTitled(album.name, track.artists?.map((artist) => artist.name) || []))
             addClue(clues, album.name, CLUE_TYPE_ALBUM, album);
+        else
+            addClue(clues, 'self-titled album', CLUE_TYPE_ALBUM, album);
     });
 }
 
@@ -49,6 +51,8 @@ function extractSiblingTrackClues(clues: ContextClueObject, track: TrackContextO
         siblingTracks.tracks.forEach((siblingTrack) => {
             if (!isSelfTitled(siblingTrack.name, track.artists?.map((artist) => artist.name) || []))
                 addClue(clues, siblingTrack.name, CLUE_TYPE_TRACK, siblingTrack);
+            else
+                addClue(clues, 'self-titled track', CLUE_TYPE_TRACK, siblingTrack);
         });
     });
 }

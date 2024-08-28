@@ -1,4 +1,4 @@
-import { CURRENT_URL, INTERNAL_FETCH_SETTINGS, DEBUG_INTERNAL_API as LOG, DEBUG_FETCH } from "../app/config";
+import { CURRENT_URL, INTERNAL_FETCH_SETTINGS, DEBUG_INTERNAL_API as LOG, DEBUG_FETCH, FAVICON_API_ROUTE, FAVICON_API_QUERY } from "../app/config";
 
 export async function fetchResource<T>(loc: string, param: any, body?: any): Promise<T | undefined> {
     try {
@@ -68,4 +68,20 @@ export async function parseParameter<T>(request: Request): Promise<T | undefined
         console.error('[INTERNAL-API] Error parsing parameter', error);
         return undefined;
     }
+}
+
+
+export const wait = (m: number) => new Promise(r => setTimeout(r, m))
+export const resolveSlowly = async (delay: number, promises: (Promise<any> | undefined)[]) => {
+    const results = [];
+    for (const promise of promises) {
+        results.push(await promise);
+        await wait(delay);
+    }
+    return results;
+};
+
+export function getFaviconUrl(url?: string): string {
+    if (!url) return '';
+    return FAVICON_API_ROUTE + url.split('/')[2] + FAVICON_API_QUERY;
 }

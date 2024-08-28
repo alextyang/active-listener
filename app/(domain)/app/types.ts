@@ -1,4 +1,12 @@
 import { Track } from "@spotify/web-api-ts-sdk";
+import { TrackContextObject } from "./context";
+
+export type CompleteTrack = {
+    timestamp?: number,
+    'metadata'?: TrackContextObject,
+    'articles'?: CompleteArticle[],
+    'summary'?: string
+}
 
 export type ArticleSearchResult = {
     title: string,
@@ -28,7 +36,7 @@ export type CompleteArticle = {
     publishedTime: string,
     byline: string,
     image?: string,
-    gradient: string,
+    gradient?: string,
     excerpt: string,
     type: string,
     relevance: string,

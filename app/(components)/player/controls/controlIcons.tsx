@@ -1,82 +1,90 @@
 
-import { TrackContext, SpotifyClientContext, ActionContext, PlaybackSyncContext } from "@/app/(domain)/app/context";
+import { REFRESH_ICON_ANIMATION_INTERVAL } from "@/app/(domain)/app/config";
+import { TrackContext, SpotifyClientContext, ActionContext, PlaybackSyncContext, PlaylistContext } from "@/app/(domain)/app/context";
+import { getTracksPlaylists } from "@/app/(domain)/spotify/library";
 import { useEffect, useContext, useState, use, useRef, useCallback } from "react";
+import { AddToLibraryIcon, RefreshIcon, SavedToLibraryIcon } from "../../icons";
 
 
 export default function ControlIcons() {
-
     return (
         <div className="controlIcons">
-            <RefreshIcon />
-            <LibraryIcon />
+            <RefreshControlIcon />
+            <LibraryControlIcon />
         </div>
     )
 }
 
-function RefreshIcon() {
+function RefreshControlIcon() {
     const actions = useContext(ActionContext);
     const playbackSyncState = useContext(PlaybackSyncContext);
     const client = useContext(SpotifyClientContext)?.api;
-    const [isRotating, setIsRotating] = useState(playbackSyncState.state.state === 'playback');
+
+    const [isDisabled, setIsDisabled] = useState(playbackSyncState.state.state === 'playback');
+    const [rotationAngle, setRotationAngle] = useState(isDisabled ? -360 : 0);
+
+    // Sync icon rotation
     const rotationTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
-
-    const handleRefreshClick = useCallback(() => {
-        if (isRotating) return;
-        actions?.requestUpdate();
-        setIsRotating(true);
-    }, [actions, isRotating]);
-
     useEffect(() => {
         if (playbackSyncState.state.state === 'playback')
-            setIsRotating(true);
+            setRotationAngle(rotationAngle - 180);
 
         const tryResolveRefresh = () => {
             if (rotationTimeout.current)
                 clearTimeout(rotationTimeout.current);
             rotationTimeout.current = setTimeout(() => {
                 if (playbackSyncState.state.state === 'playback') tryResolveRefresh();
-                else setIsRotating(false);
-            }, 500);
+                else setIsDisabled(false);
+            }, REFRESH_ICON_ANIMATION_INTERVAL);
         };
 
         tryResolveRefresh();
+
+        return () => {
+            if (rotationTimeout.current)
+                clearTimeout(rotationTimeout.current);
+        };
     }, [playbackSyncState.state.state]);
 
+
+    const handleRefreshClick = useCallback(() => {
+        if (isDisabled) return;
+        actions?.requestUpdate();
+        setIsDisabled(true);
+        setRotationAngle(rotationAngle - 180);
+    }, [actions, isDisabled]);
+
+
     if (!client) return <></>;
+
+    const actionName = 'Refresh Now Playing';
+    const rotationStyle = {
+        transform: `rotate(${rotationAngle}deg)`,
+        // opacity: isDisabled ? 0.7 : 1
+    };
+
     return (
-        <div className={"refreshIcon " + (isRotating ? 'refreshIconRotating' : '')} onClick={handleRefreshClick} title="Refresh">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" ><path d="M160-160v-80h110l-16-14q-49-49-71.5-106.5T160-478q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z" /></svg>
+        <div className={"refreshIcon "} onClick={handleRefreshClick} title={actionName} style={rotationStyle}>
+            <RefreshIcon />
         </div>
     );
 }
 
-function LibraryIcon() {
-    const currentTrackInfo = useContext(TrackContext);
+function LibraryControlIcon() {
+    const trackContext = useContext(TrackContext);
+    const playlistContext = useContext(PlaylistContext);
     const client = useContext(SpotifyClientContext)?.api;
-
-    const [isInLibrary, setIsInLibrary] = useState(false);
-
-    useEffect(() => {
-        setIsInLibrary(false);
-        if (!currentTrackInfo?.track) return;
-
-        // Check if track is in library
-        client?.currentUser.tracks.hasSavedTracks([currentTrackInfo.track.id]).then((result) => {
-            setIsInLibrary(result[0]);
-            console.log('[LIBRARY] Track is in library: ' + result[0]);
-        });
-    }, [currentTrackInfo?.track, client?.currentUser]);
 
     if (!client) return <></>;
 
-    return (
-        <div className="libraryIcon" title={isInLibrary ? 'In Your Library' : 'Not In Your Library'}>
-            {isInLibrary ? (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#1DB954"><path d="m423.23-309.85 268.92-268.92L650-620.92 423.23-394.15l-114-114L267.08-466l156.15 156.15ZM480.07-100q-78.84 0-148.21-29.92t-120.68-81.21q-51.31-51.29-81.25-120.63Q100-401.1 100-479.93q0-78.84 29.92-148.21t81.21-120.68q51.29-51.31 120.63-81.25Q401.1-860 479.93-860q78.84 0 148.21 29.92t120.68 81.21q51.31 51.29 81.25 120.63Q860-558.9 860-480.07q0 78.84-29.92 148.21t-81.21 120.68q-51.29 51.31-120.63 81.25Q558.9-100 480.07-100Z" /></svg>
-            ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#777777"><path d="M450-290h60v-160h160v-60H510v-160h-60v160H290v60h160v160Zm30.07 190q-78.84 0-148.21-29.92t-120.68-81.21q-51.31-51.29-81.25-120.63Q100-401.1 100-479.93q0-78.84 29.92-148.21t81.21-120.68q51.29-51.31 120.63-81.25Q401.1-860 479.93-860q78.84 0 148.21 29.92t120.68 81.21q51.31 51.29 81.25 120.63Q860-558.9 860-480.07q0 78.84-29.92 148.21t-81.21 120.68q-51.29 51.31-120.63 81.25Q558.9-100 480.07-100Zm-.07-60q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" /></svg>
+    const presentPlaylists = getTracksPlaylists(trackContext?.track?.id, playlistContext.playlistDict);
+    const isInLibrary = presentPlaylists.length > 0;
+    const hoverText = isInLibrary ? 'Saved to Library' : 'Add to Library';
+    const icon = isInLibrary ? <SavedToLibraryIcon /> : <AddToLibraryIcon />;
 
-            )}
+    return (
+        <div className="libraryIcon" title={hoverText}>
+            {icon}
         </div>
     );
 

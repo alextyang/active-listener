@@ -1,10 +1,14 @@
 "use client";
 
-import { SpotifyClientContext, TrackSyncState, TrackContextObject, ActionContext, PlaybackContext, TrackSyncContext, TrackContext, PlaybackSyncState, PlaybackSyncContext, ContextClueObject, ContextClueContext } from "@/app/(domain)/app/context";
+import { startSummaryStream } from "@/app/(api)/summarize/action";
+import { getArticles } from "@/app/(domain)/app/articles/articles";
+import { DEBUG_SPOTIFY_METADATA_SYNC as LOG, QUEUE_CACHE_DELAY, QUEUE_CACHE_NUMBER } from "@/app/(domain)/app/config";
+import { SpotifyClientContext, TrackSyncState, TrackContextObject, ActionContext, PlaybackContext, TrackSyncContext, TrackContext, PlaybackSyncState, PlaybackSyncContext, ContextClueObject, ContextClueContext, QueueContext } from "@/app/(domain)/app/context";
+import { streamSummary } from "@/app/(domain)/app/summary/summary";
 import { extractMetadataContextClues } from "@/app/(domain)/spotify/clues";
 import { shouldSync, syncMetadata } from "@/app/(domain)/spotify/metadata";
 import { getPlaybackState, togglePlayback, skipToNext, skipToPrevious, setProgress, scheduleRegularUpdate, scheduleTrackEndUpdate } from "@/app/(domain)/spotify/player";
-import { PlaybackState, Track } from "@spotify/web-api-ts-sdk";
+import { PlaybackState, SimplifiedTrack, Track } from "@spotify/web-api-ts-sdk";
 import { useContext, useState, useRef, useCallback, useEffect } from "react";
 
 
@@ -19,7 +23,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const trackUpdateIntervalID = useRef<NodeJS.Timeout | undefined>(undefined);
 
     const [playbackState, setPlaybackState] = useState<PlaybackState | undefined>(undefined);
-    const [queue, setQueue] = useState<Track[]>([]);
     const [currentTrack, setCurrentTrack] = useState<TrackContextObject>({});
     const [contextClues, setContextClues] = useState<ContextClueObject>({});
 
@@ -35,18 +38,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         return true;
     }, []);
 
-    const handlePlaybackSync = useCallback(async () => {
+    const handlePlaybackSync = useCallback(async (shouldForce?: boolean) => {
         // if (document.hidden) return;
         const newState = await getPlaybackState(spotifyClient.api, setPlaybackSyncState);
         setPlaybackState(newState);
 
-        if (newState && shouldSync(newState, currentTrackID.current, trackSyncState)) {
+        if (newState && (shouldSync(newState, currentTrackID.current, trackSyncState) || shouldForce)) {
             currentTrackID.current = playbackState?.item.id;
             await syncMetadata(spotifyClient.api, spotifyClient.user, newState, trackSyncState, handleMetadataUpdate, setTrackSyncState);
         }
+        else if (newState) {
+            if (LOG) console.log('[SPOTIFY-METADATA] Track already loaded: old(' + currentTrackID.current + ') new(' + newState?.item.id + ') ...' + trackSyncState.state);
+        }
         else
-            console.log('[SPOTIFY-METADATA] Track already loaded or loading: old(' + currentTrackID.current + ') new(' + newState?.item.id + ') ...' + trackSyncState.state);
-
+            if (LOG) console.log('[SPOTIFY-METADATA] No track playing, won\'t replace existing metadata.');
 
     }, [spotifyClient.api, spotifyClient.user, trackSyncState, playbackState?.item.id, handleMetadataUpdate]);
 
@@ -73,11 +78,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         clearInterval(trackUpdateIntervalID.current);
         trackUpdateIntervalID.current = scheduleRegularUpdate(spotifyClient.api, setPlaybackState, setPlaybackSyncState);
-    }, [playbackState, spotifyClient.api]);
 
-    useEffect(() => {
-        clearTimeout(trackTimeoutID.current);
-        trackTimeoutID.current = scheduleTrackEndUpdate(spotifyClient.api, playbackState, setPlaybackState, setCurrentTrack, setPlaybackSyncState);
+        return function cleanup() {
+            clearTimeout(trackUpdateIntervalID.current);
+        }
     }, [playbackState, spotifyClient.api]);
 
     const handleVisibilityChange = useCallback(() => {
@@ -94,7 +98,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         }
     }, [handleVisibilityChange]);
 
-    // Sync on page load
+    // Sync on login / page load
     useEffect(() => {
         handlePlaybackSync();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,7 +108,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     return (
         <PlaybackContext.Provider value={{ playbackState: playbackState }}>
             <TrackContext.Provider value={currentTrack}>
-                <ActionContext.Provider value={{ togglePlayback: handleTogglePlayback, skipToNext: handleSkipToNext, skipToPrevious: handleSkipToPrevious, setProgress: handleSetProgress, requestUpdate: handlePlaybackSync }}>
+                <ActionContext.Provider value={{ togglePlayback: handleTogglePlayback, skipToNext: handleSkipToNext, skipToPrevious: handleSkipToPrevious, setProgress: handleSetProgress, requestUpdate: () => handlePlaybackSync(true) }}>
                     <PlaybackSyncContext.Provider value={{ update: setPlaybackSyncState, state: playbackSyncState }}>
                         <TrackSyncContext.Provider value={{ update: setTrackSyncState, state: trackSyncState }}>
                             <ContextClueContext.Provider value={contextClues}>

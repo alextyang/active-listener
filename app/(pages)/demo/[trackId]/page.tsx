@@ -2,20 +2,20 @@
 
 import { TrackContextObject, TrackSyncState, TrackContext, TrackSyncContext, LibrarySyncContext } from "@/app/(domain)/app/context";
 import { useState, useEffect, useContext, useRef } from "react";
-import PlaybackBackground from "../../../(components)/music/track/background";
+import PlayerBackground from "../../../(components)/music/track/background";
 import SongSearch from "../../../(components)/service/songSearch";
-import TrackInfo from "../../../(components)/music/track/trackInfo";
+import CurrentTrackInfo from "../../../(components)/music/track/currentTrackInfo";
 import { fetchTrackContext } from "../actions";
 import Profile from "@/app/(components)/service/profile";
 import Link from "next/link";
 import { Body } from "@/app/(components)/app/body";
 import { ArticleList } from "@/app/(components)/app/articles/articleList";
 import { ArticleProvider } from "@/app/(components)/app/articles/articleProvider";
-import { SummaryCard } from "@/app/(components)/app/summary/summary";
 import { SummaryProvider } from "@/app/(components)/app/summary/summaryProvider";
-import LibraryContext from "@/app/(components)/player/libraryContext";
 import { SubPlayerOverlay } from "@/app/(components)/player/playerOverlay";
 import { TrackSyncMessage } from "@/app/(components)/player/trackSyncMessage";
+import { SummaryCard } from "@/app/(components)/app/summary/summaryCard";
+import PlaylistList from "@/app/(components)/player/playlistList";
 
 
 
@@ -41,13 +41,13 @@ export default function DemoPage({ params }: { params: { trackId: string } }) {
             <TrackContext.Provider value={trackContext}>
                 <TrackSyncContext.Provider value={{ update: setFetchState, state: fetchState }}>
                     <div className="player">
-                        <PlaybackBackground />
-                        <TrackInfo></TrackInfo>
+                        <PlayerBackground />
+                        <CurrentTrackInfo></CurrentTrackInfo>
                         <SongSearch></SongSearch>
                     </div>
                     <Body>
                         <SubPlayerOverlay />
-                        <LibraryContext></LibraryContext>
+                        <PlaylistList></PlaylistList>
                         <TrackSyncMessage></TrackSyncMessage>
                         <div className="journalism">
                             <ArticleProvider>

@@ -1,13 +1,13 @@
 "use server";
 
-import { assignType, filterArticlesForRelevance } from "@/app/(domain)/app/articles/articles";
+import { assignType, filterArticlesForRelevance, trimByline, trimSiteName, trimTitle, trimWikipediaText } from "@/app/(domain)/app/articles/articles";
 import { DEBUG_ARTICLE_POPULATE as LOG, ARTIST_SEARCH_QUERY, WIKIPEDIA_POPULATE_URL, DEFAULT_ARTICLE_RELEVANCE, DEFAULT_ARTICLE_TYPE } from "@/app/(domain)/app/config";
 import { isTrackSingle } from "@/app/(domain)/music/metadata";
 import { ArticleSearchResult, CompleteArticle, ReadabilityResult } from "@/app/(domain)/app/types";
 import { fetchResource, parseParameter, fetchText } from "@/app/(domain)/utilities/fetch";
 import { findOpenGraphImage, htmlToDocument } from "@/app/(domain)/utilities/document";
 import { parseReadableArticle } from "@/app/(domain)/utilities/readability";
-import { extractArticleGradient } from "@/app/(domain)/utilities/media";
+import { extractArticleGradient } from "@/app/(domain)/utilities/colors";
 
 
 export async function POST(request: Request) {
@@ -33,16 +33,16 @@ async function populateArticle(article: ArticleSearchResult): Promise<CompleteAr
     if (!doc) return undefined;
 
     let readability = parseReadableArticle(doc);
-    if (article.type === 'wikipedia') readability = trimWikipediaReadability(readability);
+    if (article.type === 'wikipedia') readability = trimWikipediaText(readability);
     if (!readability) return undefined;
 
-    const title = article.title.length > 1 ? article.title : readability.title;
     const content = readability.textContent.trim();
     const siteName = trimSiteName(article.link, readability.siteName);
     const image = findOpenGraphImage(html);
     const gradient = await extractArticleGradient(image);
     const byline = trimByline(readability.byline);
     const wordCount = readability.textContent.split(' ').length;
+    const title = trimTitle(article.title, readability.title, siteName);
 
     const type = article.type ?? DEFAULT_ARTICLE_TYPE;
     const relevance = article.relevance ?? DEFAULT_ARTICLE_RELEVANCE;
@@ -86,18 +86,3 @@ async function fetchWikipediaArticle(article: ArticleSearchResult): Promise<stri
     return html;
 }
 
-function trimWikipediaReadability(readability: ReadabilityResult): ReadabilityResult {
-    if (!readability) return undefined;
-    readability.textContent = readability.textContent.split('References[edit]')[0];
-    readability.content = readability.content.split('<span id="References">References</span>')[0];
-    return readability;
-}
-
-function trimByline(byline?: string): string {
-    if (!byline) return '';
-    return byline.replace(/[^\w\s]/gi, '').replace('By', '').replace('by', '').replace('Words', '').trim();
-}
-
-function trimSiteName(link: string, siteName?: string): string {
-    return siteName && siteName.length > 1 ? siteName : (link.split('/')[2].replace('www.', '').split('.')[0].toLocaleUpperCase())
-}

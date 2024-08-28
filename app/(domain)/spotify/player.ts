@@ -1,6 +1,6 @@
 import { Devices, PlaybackState, SpotifyApi } from "@spotify/web-api-ts-sdk";
 import { PlaybackSyncState, TrackContextObject, TrackSyncState } from "../app/context";
-import { DEBUG_NOW_PLAYING as LOG2, DEBUG_PLAYER_CONTROLS as LOG1, TRACK_AUTO_POLL_INTERVAL, TRACK_END_POLL_DELAY, PLAY_AFTER_SEEK, CONTROL_RESYNC_LATENCY } from "../app/config";
+import { DEBUG_NOW_PLAYING as LOG2, DEBUG_PLAYER_CONTROLS as LOG1, TRACK_AUTO_POLL_INTERVAL, TRACK_END_POLL_DELAY, PLAY_AFTER_SEEK, CONTROL_RESYNC_LATENCY, TIMESTAMP_ERROR_MARGIN } from "../app/config";
 
 // Controls
 export async function togglePlayback(client?: SpotifyApi, playbackState?: PlaybackState, handlePlaybackSync?: () => Promise<void>, setPlaybackState?: (state?: PlaybackState) => void) {
@@ -20,7 +20,7 @@ export async function playPlayback(client?: SpotifyApi, playbackState?: Playback
     const id = await getDeviceID(client, playbackState);
 
     try {
-        if (playbackState) setPlaybackState({ ...playbackState, is_playing: true });
+        if (playbackState) setPlaybackState({ ...playbackState, is_playing: true, timestamp: Date.now() });
         await client.player.startResumePlayback(id ?? '');
         if (LOG1) console.log('[PLAYER-CONTROLS] Resumed playback.');
 
@@ -38,7 +38,7 @@ export async function pausePlayback(client?: SpotifyApi, playbackState?: Playbac
     const id = await getDeviceID(client, playbackState);
 
     try {
-        if (playbackState) setPlaybackState({ ...playbackState, is_playing: false });
+        if (playbackState) setPlaybackState({ ...playbackState, is_playing: false, timestamp: Date.now(), progress_ms: getProgressMilliseconds(playbackState) });
         await client.player.pausePlayback(id ?? '');
         if (LOG1) console.log('[PLAYER-CONTROLS] Paused playback.');
 
@@ -56,7 +56,7 @@ export async function skipToNext(client?: SpotifyApi, playbackState?: PlaybackSt
     const id = await getDeviceID(client, playbackState);
 
     if (playbackState)
-        setPlaybackState({ ...playbackState, is_playing: true });
+        setPlaybackState({ ...playbackState, is_playing: true, timestamp: Date.now(), progress_ms: 0 });
 
     try {
         await client.player.skipToNext(id ?? '');
@@ -73,7 +73,7 @@ export async function skipToPrevious(client?: SpotifyApi, playbackState?: Playba
     const id = await getDeviceID(client, playbackState);
 
     if (playbackState)
-        setPlaybackState({ ...playbackState, is_playing: true });
+        setPlaybackState({ ...playbackState, is_playing: true, timestamp: Date.now(), progress_ms: 0 });
 
     try {
         await client.player.skipToPrevious(id ?? '');
@@ -93,7 +93,7 @@ export async function setProgress(percent: number, client?: SpotifyApi, playback
     const oldProgress = playbackState.progress_ms;
 
     try {
-        setPlaybackState({ ...playbackState, progress_ms: Math.round(percent * duration) });
+        setPlaybackState({ ...playbackState, progress_ms: Math.round(percent * duration), timestamp: Date.now() });
         await client.player.seekToPosition(Math.round(percent * duration), id);
         if (LOG1) console.log('[PLAYER-CONTROLS] Set progress:', percent);
 
@@ -122,6 +122,8 @@ function refreshAfterAction(handlePlaybackSync: () => Promise<void>) {
     setTimeout(() => handlePlaybackSync(), CONTROL_RESYNC_LATENCY);
 }
 
+
+// Render controls
 export function shouldDisplayPlaying(playbackState?: PlaybackState): boolean {
     return playbackState?.is_playing ?? false;
 }
@@ -129,6 +131,7 @@ export function shouldDisplayPlaying(playbackState?: PlaybackState): boolean {
 export function shouldDisplayControls(playbackState?: PlaybackState): boolean {
     return !playbackState?.item;
 }
+
 
 
 // Now playing
@@ -146,6 +149,7 @@ export async function getPlaybackState(client?: SpotifyApi, setFetchState?: (sta
 
     if (LOG2) console.log('[PLAYER-SYNC] Playback found.', playbackState);
     if (setFetchState) setFetchState({ state: 'waiting' });
+    if (Date.now() - playbackState.timestamp > TIMESTAMP_ERROR_MARGIN) playbackState.timestamp = Date.now();
     return playbackState;
 }
 
@@ -161,7 +165,10 @@ async function fetchPlaybackState(client: SpotifyApi) {
 
 export function scheduleTrackEndUpdate(client?: SpotifyApi, playbackState?: PlaybackState, setPlaybackState?: (state?: PlaybackState) => void, setCurrentTrack?: (value: TrackContextObject) => void, setFetchState?: (state: PlaybackSyncState) => void) {
     if (!client || !playbackState || !setPlaybackState || !setCurrentTrack) return undefined;
-    return scheduleAction(playbackState.item.duration_ms - playbackState.progress_ms + TRACK_END_POLL_DELAY, async () => {
+    if (!playbackState.item || !playbackState.is_playing) return undefined;
+    if (getTimeLeft(playbackState) < TRACK_END_POLL_DELAY) return undefined;
+
+    return scheduleAction(getTimeLeft(playbackState) ?? 0 + TRACK_END_POLL_DELAY, async () => {
         if (LOG2) console.log('[PLAYER-SYNC] Track ended, updating state.');
         setCurrentTrack({});
         getPlaybackState(client, setFetchState).then(setPlaybackState);
@@ -178,4 +185,19 @@ export function scheduleRegularUpdate(client?: SpotifyApi, setPlaybackState?: (s
 
 function scheduleAction(delay: number, action: () => void) {
     return setTimeout(action, delay);
+}
+
+export function getTimeLeft(playbackState: PlaybackState): number {
+    return playbackState.item.duration_ms - playbackState.progress_ms - (Date.now() - playbackState.timestamp);
+}
+
+export function getProgressPercent(playbackState?: PlaybackState): number {
+    if (!playbackState || !playbackState.item || !playbackState.item.duration_ms) return 0;
+    // console.log('progress: ' + (playbackState.progress_ms / 1000).toFixed(1) + 's\toffset:' + ((Date.now() - playbackState.timestamp) / 1000).toFixed(1) + 's\tpercentage: ' + (getProgressMilliseconds(playbackState) / playbackState.item.duration_ms * 100).toFixed(1) + '%');
+    return getProgressMilliseconds(playbackState) / playbackState.item.duration_ms;
+}
+
+export function getProgressMilliseconds(playbackState?: PlaybackState): number {
+    if (!playbackState || !playbackState.item || !playbackState.item.duration_ms) return 0;
+    return playbackState.progress_ms + (Date.now() - playbackState.timestamp);
 }
