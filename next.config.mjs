@@ -58,6 +58,10 @@ const nextConfig = {
             },
             {
                 protocol: 'https',
+                hostname: '**.spotifycdn.com'
+            },
+            {
+                protocol: 'https',
                 hostname: 's2.googleusercontent.com'
             }
         ],
