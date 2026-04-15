@@ -1,45 +1,25 @@
 "use client";
 
-import { TrackContextObject, TrackSyncState, TrackContext, TrackSyncContext, LibrarySyncContext } from "@/app/(domain)/app/context";
-import { useState, useEffect, useContext, useRef } from "react";
 import PlayerBackground from "../../../(components)/music/track/background";
 import SongSearch from "../../../(components)/service/songSearch";
 import CurrentTrackInfo from "../../../(components)/music/track/currentTrackInfo";
-import { fetchTrackContext } from "../actions";
 import Profile from "@/app/(components)/service/profile";
 import Link from "next/link";
 import { Body } from "@/app/(components)/app/body";
 import { ArticleList } from "@/app/(components)/app/articles/articleList";
-import { ArticleProvider } from "@/app/(components)/app/articles/articleProvider";
-import { SummaryProvider } from "@/app/(components)/app/summary/summaryProvider";
 import { SubPlayerOverlay } from "@/app/(components)/player/playerOverlay";
 import { TrackSyncMessage } from "@/app/(components)/player/trackSyncMessage";
 import { SummaryCard } from "@/app/(components)/app/summary/summaryCard";
 import PlaylistList from "@/app/(components)/player/playlistList";
+import { TrackRuntimeProvider } from "@/app/(components)/app/trackRuntimeProvider";
+import { use } from "react";
 
-
-
-export default function DemoPage({ params }: { params: { trackId: string } }) {
-    const [trackContext, setTrackContext] = useState<TrackContextObject>(null);
-    const [fetchState, setFetchState] = useState<TrackSyncState>({ state: 'track' });
-
-    useEffect(() => {
-        const action = fetchTrackContext.bind(null, params.trackId as string)
-
-        setFetchState({ state: 'track' });
-        action().then((track) => {
-            setTrackContext(track ?? null);
-            if (!track) setFetchState({ state: 'waiting' });
-            else setFetchState({ state: 'track' });
-        });
-
-    }, [params.trackId]);
-
+export default function DemoPage({ params }: { params: Promise<{ trackId: string }> }) {
+    const { trackId } = use(params);
 
     return (
         <main className={''}>
-            <TrackContext.Provider value={trackContext}>
-                <TrackSyncContext.Provider value={{ update: setFetchState, state: fetchState }}>
+            <TrackRuntimeProvider trackId={trackId}>
                     <div className="player">
                         <PlayerBackground />
                         <CurrentTrackInfo></CurrentTrackInfo>
@@ -50,17 +30,12 @@ export default function DemoPage({ params }: { params: { trackId: string } }) {
                         <PlaylistList></PlaylistList>
                         <TrackSyncMessage></TrackSyncMessage>
                         <div className="journalism">
-                            <ArticleProvider>
-                                <SummaryProvider>
-                                    <SummaryCard />
-                                </SummaryProvider>
-                                <ArticleList></ArticleList>
-                            </ArticleProvider>
+                            <SummaryCard />
+                            <ArticleList></ArticleList>
                         </div>
                     </Body>
-                </ TrackSyncContext.Provider>
+                </TrackRuntimeProvider>
                 <Footer></Footer>
-            </TrackContext.Provider>
         </main>
     );
 }

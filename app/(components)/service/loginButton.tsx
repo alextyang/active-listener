@@ -5,16 +5,19 @@ import { SpotifyLogoWhite } from "@/app/(components)/service/spotifyLogo";
 
 export default function LoginButton({ message = 'Login to Spotify' }: { message?: string }) {
     const client = useContext(SpotifyClientContext);
+    const isLoggingIn = client.isLoggingIn ?? false;
 
     const handleLogin = () => {
+        if (isLoggingIn) return;
         client.login();
     }
 
     return (
-        <div className="loginButton" onClick={handleLogin}>
+        <button className="loginButton" data-testid="spotify-login-button" type="button" onClick={handleLogin} disabled={isLoggingIn} aria-busy={isLoggingIn}>
             <SpotifyLogoWhite></SpotifyLogoWhite>
-            <p>{message}</p>
-        </div>
+            <p>{isLoggingIn ? "Connecting to Spotify..." : message}</p>
+            {isLoggingIn ? <span className="loginButtonSpinner" aria-hidden="true"></span> : null}
+        </button>
 
     )
 }

@@ -40,7 +40,7 @@ export default function CurrentTrackInfo() {
             }
             <div className="infoStack">
                 <ScrollOverflow>
-                    <Link href={trackHref} className="songTitle">{trackName}</Link>
+                    <Link href={trackHref} className="songTitle" data-testid="spotify-current-track">{trackName}</Link>
                 </ScrollOverflow>
 
                 <ScrollOverflow>
@@ -52,4 +52,3 @@ export default function CurrentTrackInfo() {
         </div>
     )
 }
-

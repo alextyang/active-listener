@@ -13,6 +13,7 @@ export default function Controls() {
     const isPlaying = shouldDisplayPlaying(playback?.playbackState);
     const disabledClassName = isDisabled ? 'disabledControls' : '';
     const playPauseIcon = isPlaying ? <PauseIcon /> : <PlayIcon />;
+    const playPauseLabel = isPlaying ? "Pause playback" : "Resume playback";
 
 
     const handleControlAction = useCallback((callback: () => void) => {
@@ -38,13 +39,13 @@ export default function Controls() {
 
     return (
         <div className={'controls ' + disabledClassName}>
-            <div onClick={handleSkipToPrevious} className='controlButton'>
+            <div onClick={handleSkipToPrevious} className='controlButton' data-testid="spotify-skip-previous" title="Previous track" aria-label="Previous track">
                 <SkipToPreviousIcon />
             </div>
-            <div onClick={handleTogglePlayback} className='controlButton playButton'>
+            <div onClick={handleTogglePlayback} className='controlButton playButton' data-testid="spotify-toggle-playback" title={playPauseLabel} aria-label={playPauseLabel}>
                 {playPauseIcon}
             </div>
-            <div onClick={handleSkipToNext} className='controlButton'>
+            <div onClick={handleSkipToNext} className='controlButton' data-testid="spotify-skip-next" title="Next track" aria-label="Next track">
                 <SkipToNextIcon />
             </div>
         </div>

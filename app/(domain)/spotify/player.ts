@@ -17,32 +17,33 @@ export async function togglePlayback(client?: SpotifyApi, playbackState?: Playba
 
 export async function playPlayback(client?: SpotifyApi, playbackState?: PlaybackState, handlePlaybackSync?: () => Promise<void>, setPlaybackState?: (state?: PlaybackState) => void) {
     if (!client || !setPlaybackState || !handlePlaybackSync) return;
-    const id = await getDeviceID(client, playbackState);
+    let deviceId: string | undefined;
 
     try {
+        deviceId = await getDeviceID(client, playbackState);
         if (playbackState) setPlaybackState({ ...playbackState, is_playing: true, timestamp: Date.now() });
-        await client.player.startResumePlayback(id ?? '');
+        const result = await runSpotifyPlayerCommand(() => client.player.startResumePlayback(deviceId ?? ''));
         if (LOG1) console.log('[PLAYER-CONTROLS] Resumed playback.');
 
-        if (!playbackState)
+        if (!playbackState || result.normalized)
             refreshAfterAction(handlePlaybackSync);
 
     } catch (error) {
         refreshAfterAction(handlePlaybackSync);
-        console.error('[PLAYER-CONTROLS] Error resuming playback:', error, id, playbackState);
+        console.error('[PLAYER-CONTROLS] Error resuming playback:', error, deviceId, playbackState);
     }
 }
 
 export async function pausePlayback(client?: SpotifyApi, playbackState?: PlaybackState, handlePlaybackSync?: () => Promise<void>, setPlaybackState?: (state?: PlaybackState) => void) {
     if (!client || !setPlaybackState || !handlePlaybackSync) return;
-    const id = await getDeviceID(client, playbackState);
 
     try {
+        const id = await getDeviceID(client, playbackState);
         if (playbackState) setPlaybackState({ ...playbackState, is_playing: false, timestamp: Date.now(), progress_ms: getProgressMilliseconds(playbackState) });
-        await client.player.pausePlayback(id ?? '');
+        const result = await runSpotifyPlayerCommand(() => client.player.pausePlayback(id ?? ''));
         if (LOG1) console.log('[PLAYER-CONTROLS] Paused playback.');
 
-        if (!playbackState)
+        if (!playbackState || result.normalized)
             refreshAfterAction(handlePlaybackSync);
 
     } catch (error) {
@@ -53,13 +54,13 @@ export async function pausePlayback(client?: SpotifyApi, playbackState?: Playbac
 
 export async function skipToNext(client?: SpotifyApi, playbackState?: PlaybackState, handlePlaybackSync?: () => Promise<void>, setPlaybackState?: (state?: PlaybackState) => void) {
     if (!client || !playbackState || !setPlaybackState || !handlePlaybackSync) return;
-    const id = await getDeviceID(client, playbackState);
-
-    if (playbackState)
-        setPlaybackState({ ...playbackState, is_playing: true, timestamp: Date.now(), progress_ms: 0 });
 
     try {
-        await client.player.skipToNext(id ?? '');
+        const id = await getDeviceID(client, playbackState);
+        if (playbackState)
+            setPlaybackState({ ...playbackState, is_playing: true, timestamp: Date.now(), progress_ms: 0 });
+
+        await runSpotifyPlayerCommand(() => client.player.skipToNext(id ?? ''));
         refreshAfterAction(handlePlaybackSync);
         if (LOG1) console.log('[PLAYER-CONTROLS] Skipped to next track.');
     } catch (error) {
@@ -70,13 +71,13 @@ export async function skipToNext(client?: SpotifyApi, playbackState?: PlaybackSt
 
 export async function skipToPrevious(client?: SpotifyApi, playbackState?: PlaybackState, handlePlaybackSync?: () => Promise<void>, setPlaybackState?: (state?: PlaybackState) => void) {
     if (!client || !playbackState || !setPlaybackState || !handlePlaybackSync) return;
-    const id = await getDeviceID(client, playbackState);
-
-    if (playbackState)
-        setPlaybackState({ ...playbackState, is_playing: true, timestamp: Date.now(), progress_ms: 0 });
 
     try {
-        await client.player.skipToPrevious(id ?? '');
+        const id = await getDeviceID(client, playbackState);
+        if (playbackState)
+            setPlaybackState({ ...playbackState, is_playing: true, timestamp: Date.now(), progress_ms: 0 });
+
+        await runSpotifyPlayerCommand(() => client.player.skipToPrevious(id ?? ''));
         refreshAfterAction(handlePlaybackSync);
         if (LOG1) console.log('[PLAYER-CONTROLS] Skipped to previous track.');
     } catch (error) {
@@ -90,12 +91,13 @@ export async function setProgress(percent: number, client?: SpotifyApi, playback
 
     const id = playbackState.device?.id ?? '';
     const duration = playbackState.item?.duration_ms ?? 0;
-    const oldProgress = playbackState.progress_ms;
 
     try {
         setPlaybackState({ ...playbackState, progress_ms: Math.round(percent * duration), timestamp: Date.now() });
-        await client.player.seekToPosition(Math.round(percent * duration), id);
+        const result = await runSpotifyPlayerCommand(() => client.player.seekToPosition(Math.round(percent * duration), id));
         if (LOG1) console.log('[PLAYER-CONTROLS] Set progress:', percent);
+        if (result.normalized)
+            refreshAfterAction(handlePlaybackSync);
 
         if (PLAY_AFTER_SEEK && !playbackState.is_playing)
             await playPlayback(client, playbackState, handlePlaybackSync, setPlaybackState);
@@ -103,6 +105,25 @@ export async function setProgress(percent: number, client?: SpotifyApi, playback
     } catch (error) {
         refreshAfterAction(handlePlaybackSync);
         console.error('[PLAYER-CONTROLS] Error setting progress:', error);
+    }
+}
+
+export async function addToPlaybackQueue(client?: SpotifyApi, uri?: string): Promise<{ ok: boolean; error?: string }> {
+    if (!client || !uri) {
+        return {
+            ok: false,
+            error: "Spotify playback is unavailable.",
+        };
+    }
+
+    try {
+        const result = await runSpotifyPlayerCommand(() => client.player.addItemToPlaybackQueue(uri));
+        return { ok: result.ok };
+    } catch (error) {
+        return {
+            ok: false,
+            error: error instanceof Error ? error.message : "Failed to add track to queue.",
+        };
     }
 }
 
@@ -120,6 +141,26 @@ async function getDeviceID(client?: SpotifyApi, playbackState?: PlaybackState): 
 
 function refreshAfterAction(handlePlaybackSync: () => Promise<void>) {
     setTimeout(() => handlePlaybackSync(), CONTROL_RESYNC_LATENCY);
+}
+
+function isSpotifyResponseParseError(error: unknown) {
+    if (!(error instanceof Error)) return false;
+
+    return error instanceof SyntaxError
+        || error.message.includes("Unexpected end of JSON input")
+        || error.message.includes("Unable to parse JSON string")
+        || error.message.includes("JSON Parse error");
+}
+
+async function runSpotifyPlayerCommand(command: () => Promise<unknown>): Promise<{ ok: true; normalized: boolean }> {
+    try {
+        await command();
+        return { ok: true, normalized: false };
+    } catch (error) {
+        if (isSpotifyResponseParseError(error))
+            return { ok: true, normalized: true };
+        throw error;
+    }
 }
 
 

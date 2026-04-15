@@ -12,13 +12,13 @@ export default function PlaylistsWithTrackList({ track }: { track?: SimplifiedTr
     if (!track) track = trackContext?.track;
 
     const playlists = getTracksPlaylists(track?.id, playlistDicts, user);
-    if (!playlists || playlists.length === 0) return <></>;
+    if (!playlists.length) return null;
 
     return (
         <div className={'libraryContext'}>
             <div className={'playlistGrid'}>
                 {playlists.map((playlist, index) => {
-                    return <PlaylistCard key={index + 'playlistContextItem'} playlist={playlist} />;
+                    return <PlaylistCard key={playlist.id ?? index + 'playlistContextItem'} playlist={playlist} />;
                 })}
             </div>
         </div>

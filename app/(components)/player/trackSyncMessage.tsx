@@ -4,7 +4,7 @@ import { useContext } from "react";
 export function TrackSyncMessage() {
     const fetchState = useContext(TrackSyncContext);
 
-    const message = trackSyncMessages[fetchState.state.state];
+    const message = fetchState.state.message ?? trackSyncMessages[fetchState.state.state];
     const percentage = fetchState.state.percent;
 
     const shouldShowMessage = message.length > 0;
@@ -13,10 +13,16 @@ export function TrackSyncMessage() {
     const shouldShowPercentage = percentage && percentage !== -1;
     const percentageClass = shouldShowPercentage ? ' percentage ' : '';
     const percentageStyle = { width: percentage + '%' };
+    const shouldShowRetry = Boolean(fetchState.state.isError);
 
     return (
         <div className={"loading " + hiddenClass + percentageClass}>
-            <div className="loadingText">{message}</div>
+            <div className="loadingText" data-testid="track-runtime-message">{message}</div>
+            {shouldShowRetry ? (
+                <button className="loadingRetry" data-testid="track-runtime-retry" type="button" onClick={fetchState.retry}>
+                    Retry
+                </button>
+            ) : ('')}
             {shouldShowPercentage ? (
                 <div className="loadingBar">
                     <div className="loadingBarFill" style={percentageStyle}></div>

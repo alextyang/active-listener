@@ -1,18 +1,59 @@
 import { IRedirectionStrategy, SpotifyApi } from "@spotify/web-api-ts-sdk";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { SPOTIFY_CLIENT_ID, CURRENT_URL, DEBUG_ACCOUNT as LOG } from "../app/config";
+import { DEBUG_ACCOUNT as LOG, SPOTIFY_SCOPES } from "../app/config";
 import { hasLocalKey } from "../browser/localStorage";
 
+const SPOTIFY_TOKEN_KEY = "spotify-sdk:AuthorizationCodeWithPKCEStrategy:token";
+const SPOTIFY_CALLBACK_PARAMS = ["code", "state", "error"];
+const MISSING_SPOTIFY_VERIFIER_MESSAGE = "No verifier found in cache";
 
 export function shouldAutoLogin(client: SpotifyApi | undefined): boolean {
-    const should = !client && hasSpotifyToken();
-    if (should)
+    if (client) return false;
+
+    if (hasSpotifyToken()) {
         if (LOG) console.log('[SPOTIFY-ACCOUNT] Found existing token, attempting login...');
-    return should;
+        return true;
+    }
+
+    if (hasSpotifyAuthCallback()) {
+        if (LOG) console.log('[SPOTIFY-ACCOUNT] Found Spotify callback params, completing login...');
+        return true;
+    }
+
+    return false;
 }
 
 function hasSpotifyToken(): boolean {
-    return hasLocalKey('spotify-sdk:AuthorizationCodeWithPKCEStrategy:token');
+    return hasLocalKey(SPOTIFY_TOKEN_KEY);
+}
+
+export function hasSpotifyAuthCallback(): boolean {
+    if (typeof window === "undefined") return false;
+
+    const params = new URLSearchParams(window.location.search);
+    return params.has("code");
+}
+
+export function clearSpotifyAuthCallbackParams(): void {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    let didChange = false;
+
+    for (const param of SPOTIFY_CALLBACK_PARAMS) {
+        if (!url.searchParams.has(param)) continue;
+        url.searchParams.delete(param);
+        didChange = true;
+    }
+
+    if (!didChange) return;
+
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState({}, document.title, nextUrl || "/");
+}
+
+export function isMissingSpotifyVerifierError(error: unknown): boolean {
+    return error instanceof Error && error.message.includes(MISSING_SPOTIFY_VERIFIER_MESSAGE);
 }
 
 
@@ -40,13 +81,29 @@ export function trySpotifyLogin(
     // Attempt Spotify login
     let client = undefined;
     try {
-        client = SpotifyApi.withUserAuthorization(SPOTIFY_CLIENT_ID, CURRENT_URL, ['user-read-currently-playing', 'user-modify-playback-state', 'user-read-playback-state', 'user-library-read', 'user-read-email', 'playlist-read-private', 'playlist-read-collaborative'], { redirectionStrategy: new DocumentLocationRedirectionStrategy(router) });
+        const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID ?? '';
+        const redirectUri = resolveSpotifyRedirectUri();
+        if (!clientId || !redirectUri)
+            return undefined;
+
+        client = SpotifyApi.withUserAuthorization(clientId, redirectUri, [...SPOTIFY_SCOPES], { redirectionStrategy: new DocumentLocationRedirectionStrategy(router) });
     } catch (error) {
         console.error('[SPOTIFY-ACCOUNT] Spotify login failed.', error);
     }
     if (LOG) console.log('[SPOTIFY-ACCOUNT] Spotify login successful.');
 
     return client;
+}
+
+export function resolveSpotifyRedirectUri(): string {
+    const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim();
+    if (configuredOrigin)
+        return new URL('/', ensureAbsoluteOrigin(configuredOrigin)).toString();
+
+    if (typeof window === 'undefined')
+        return '';
+
+    return new URL('/', window.location.origin).toString();
 }
 
 
@@ -63,3 +120,10 @@ export function trySpotifyLogout(
 
     router.push('/');
 };
+
+function ensureAbsoluteOrigin(value: string): string {
+    const normalized = value.replace(/\/+$/, '');
+    if (normalized.startsWith('http://') || normalized.startsWith('https://'))
+        return normalized;
+    return `https://${normalized}`;
+}

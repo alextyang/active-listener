@@ -74,9 +74,9 @@ export default function Timeline() {
 
 
     return (
-        <div className='timeline' onMouseMove={handleMouseMove} onClick={handleMouseClick}>
-            <div className='timelineBar' >
-                <div className='timelineProgress' style={progressStyles} />
+        <div className='timeline' data-testid="spotify-timeline" onMouseMove={handleMouseMove} onClick={handleMouseClick}>
+            <div className='timelineBar' data-testid="spotify-timeline-bar">
+                <div className='timelineProgress' data-testid="spotify-timeline-progress" style={progressStyles} />
                 <div className='manualProgress' style={manualProgressStyles} />
             </div>
         </div>

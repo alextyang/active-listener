@@ -17,11 +17,11 @@ export function SummaryCard() {
     const overlayStyles = { backgroundColor: summaryOverlayColor };
 
     return (
-        <div className={"summaryCard"} style={cardStyles}>
+        <div className={"summaryCard"} data-testid="spotify-summary-card" style={cardStyles}>
             <div className="summaryIcon">
                 <SummaryIcon />
             </div>
-            <div className="summary">
+            <div className="summary" data-testid="spotify-summary-text">
                 {summary}
             </div>
             <div className="summaryCardOverlay" style={overlayStyles}></div>

@@ -7,6 +7,7 @@ import { CompleteArticle } from "../../../(domain)/app/types";
 import { HoverMenuLink, HoverMenu } from "../../utilities/hoverMenu";
 import { AddedToQueueIcon, AddToQueueIcon, ExternalLinkIcon, SmallPauseIcon, SmallPlayIcon } from "../../icons";
 import { getFaviconUrl } from "@/app/(domain)/utilities/fetch";
+import { addToPlaybackQueue } from "@/app/(domain)/spotify/player";
 
 
 export function InlineArtistTooltip({ artist, children }: { artist?: Artist, children: React.ReactNode }) {
@@ -57,7 +58,7 @@ export function InlineTrackTooltip({ track, children }: { track: Track | Simplif
     const client = useContext(SpotifyClientContext);
     const actions = useContext(ActionContext);
 
-    const [isSuccessful, setIsSuccessful] = useState(false);
+    const [queueState, setQueueState] = useState<"idle" | "pending" | "success" | "error">("idle");
 
     const isOffline = !client.api;
     const isNowPlaying = currentTrack?.track?.id === track.id;
@@ -86,12 +87,21 @@ export function InlineTrackTooltip({ track, children }: { track: Track | Simplif
         )
     }
     else {
-        const hoverText = isSuccessful ? 'Added to Queue' : 'Add to Queue';
-        const icon = isSuccessful ? (<AddedToQueueIcon />) : (<AddToQueueIcon />);
-        const action = () => {
-            client.api?.player.addItemToPlaybackQueue(track.uri);
-            setIsSuccessful(true);
-        }
+        const hoverText = queueState === "success"
+            ? 'Added to Queue'
+            : queueState === "pending"
+                ? 'Adding to Queue...'
+                : queueState === "error"
+                    ? 'Retry Add to Queue'
+                    : 'Add to Queue';
+        const icon = queueState === "success" ? (<AddedToQueueIcon />) : (<AddToQueueIcon />);
+        const action = async () => {
+            if (!client.api || queueState === "pending") return;
+
+            setQueueState("pending");
+            const result = await addToPlaybackQueue(client.api, track.uri);
+            setQueueState(result.ok ? "success" : "error");
+        };
 
         return (
             <InlineTooltip className={'trackHoverMenu'} action={action} hoverText={hoverText} src={albumImage} icon={icon} >
@@ -102,7 +112,7 @@ export function InlineTrackTooltip({ track, children }: { track: Track | Simplif
 }
 
 
-function InlineTooltip({ children, className, action, hoverText, src, icon }: { children: React.ReactNode, className: string, action: string | (() => void), hoverText: string, src?: string, icon: React.ReactNode }) {
+function InlineTooltip({ children, className, action, hoverText, src, icon }: { children: React.ReactNode, className: string, action: string | (() => void | Promise<void>), hoverText: string, src?: string, icon: React.ReactNode }) {
     if (typeof action === 'string')
         return (
             <HoverMenuLink className={"textualHoverMenu " + className} href={action} menu={(

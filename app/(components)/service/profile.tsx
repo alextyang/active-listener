@@ -23,7 +23,7 @@ export default function Profile() {
     const profileName = client?.user.display_name;
 
     return (
-        <HoverMenu className="profileCard " menu={<ProfileMenu />}>
+        <HoverMenu className="profileCard " menu={<ProfileMenu />} testId="spotify-profile-trigger">
             <Image className="profileImage" src={profileImage} alt={profileName} fill sizes={PROFILE_IMAGE_SIZES} />
         </HoverMenu>
 

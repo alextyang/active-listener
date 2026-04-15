@@ -2,7 +2,7 @@ import { SpotifyClientContext } from "@/app/(domain)/app/context";
 import { Track } from "@spotify/web-api-ts-sdk";
 import { useCallback, useContext, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/dist/client/link";
+import Link from "next/link";
 import { searchSongs } from "../../(pages)/demo/actions";
 
 export default function SongSearch({ message = 'Search for a song...' }: { message?: string }) {

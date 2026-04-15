@@ -120,6 +120,12 @@ select:focus {
     transform: scale(1.02);
   }
 
+  &:disabled {
+    cursor: progress;
+    opacity: 0.92;
+    transform: none;
+  }
+
   p {
     font-size: 1rem;
   }
@@ -128,6 +134,16 @@ select:focus {
     position: relative;
     width: 1.8rem;
     height: 1.8rem;
+  }
+
+  .loginButtonSpinner {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 0.14rem solid rgba(255, 255, 255, 0.35);
+    border-top-color: var(--white);
+    animation: rotate 0.8s linear infinite;
+    flex: 0 0 auto;
   }
 
 }
@@ -758,6 +774,22 @@ select:focus {
     height: 1rem;
     overflow: hidden;
     transition: height 1s, margin-bottom 1s;
+
+    .loadingRetry {
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--white);
+      font: inherit;
+      padding: 0.45rem 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.55);
+      }
+    }
 
     .loadingBar {
       position: relative;

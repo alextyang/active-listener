@@ -3,18 +3,25 @@ import DOMPurify from "dompurify";
 
 export function findOpenGraphImage(html?: string): string | undefined {
     if (!html) return undefined;
+
     try {
-        const ogImageTag = html.split('og:image')[1].split('content="')[1].split('"')[0];
-        if (ogImageTag && new URL(ogImageTag))
-            return ogImageTag;
+        const document = new JSDOM(html).window.document;
+        const content = document
+            .querySelector('meta[property="og:image"], meta[name="og:image"]')
+            ?.getAttribute("content")
+            ?.trim();
+        if (!content)
+            return undefined;
 
-    } catch (error) { }
+        return new URL(content).toString();
+    } catch {
+        return undefined;
+    }
 
-    return undefined;
 }
 
 export function htmlToDocument(html: string): Document {
-    const tempWindow = new JSDOM('html').window;
+    const tempWindow = new JSDOM("").window;
     const purify = DOMPurify(tempWindow);
 
     const sanitizedHtml = purify.sanitize(html);

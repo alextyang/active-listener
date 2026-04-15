@@ -28,7 +28,7 @@ export function LibraryStatus() {
 
 
     return (
-        <div className="footerMessage" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={handleClick}>
+        <div className="footerMessage" data-testid="spotify-library-status" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={handleClick}>
             {message}
         </div>
     )

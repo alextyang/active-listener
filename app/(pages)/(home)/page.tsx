@@ -8,37 +8,30 @@ import { PlayerOverlay, SubPlayerOverlay } from "@/app/(components)/player/playe
 import { Body } from "@/app/(components)/app/body";
 import { TrackSyncMessage } from "@/app/(components)/player/trackSyncMessage";
 import { ArticleList } from "@/app/(components)/app/articles/articleList";
-import { ArticleProvider } from "@/app/(components)/app/articles/articleProvider";
-import { SummaryProvider } from "@/app/(components)/app/summary/summaryProvider";
 import { SummaryCard } from "@/app/(components)/app/summary/summaryCard";
-import { QueueProvider } from "@/app/(components)/player/queueProvider";
 import PlaylistList from "@/app/(components)/player/playlistList";
+import { PlaybackTrackRuntimeProvider } from "@/app/(components)/app/trackRuntimeProvider";
 
 export default function Page() {
   return (
     <main className={''}>
       <ClientProvider loginPage={(<Intro />)}>
         <PlayerProvider>
-          <QueueProvider>
+          <PlaybackTrackRuntimeProvider>
             <PlayerOverlay />
             <Body>
               <SubPlayerOverlay />
               <PlaylistList />
               <TrackSyncMessage />
               <div className="journalism">
-                <ArticleProvider>
-                  <SummaryProvider>
-                    <SummaryCard />
-                  </SummaryProvider>
-                  <ArticleList />
-                </ArticleProvider>
+                <SummaryCard />
+                <ArticleList />
               </div>
             </Body>
-          </QueueProvider>
+          </PlaybackTrackRuntimeProvider>
         </PlayerProvider>
         <Footer />
       </ClientProvider>
     </main>
   )
 }
-

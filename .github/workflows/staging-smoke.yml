@@ -1,0 +1,60 @@
+name: Staging Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Base URL for the deployed or staging environment
+        required: false
+        type: string
+      track_id:
+        description: Spotify track id to verify
+        required: false
+        type: string
+      timeout_ms:
+        description: Overall ready-state timeout in milliseconds
+        required: false
+        type: string
+        default: "300000"
+
+concurrency:
+  group: staging-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: ${{ inputs.base_url || vars.SMOKE_BASE_URL }}
+      TRACK_ID: ${{ inputs.track_id || vars.SMOKE_TRACK_ID }}
+      SMOKE_TIMEOUT_MS: ${{ inputs.timeout_ms || vars.SMOKE_TIMEOUT_MS || '300000' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate inputs
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "BASE_URL is required"
+            exit 1
+          fi
+          if [ -z "$TRACK_ID" ]; then
+            echo "TRACK_ID is required"
+            exit 1
+          fi
+          echo "BASE_URL=$BASE_URL"
+          echo "TRACK_ID=$TRACK_ID"
+
+      - name: Run smoke
+        run: npm run smoke:remote

@@ -2,7 +2,7 @@
 import { REFRESH_ICON_ANIMATION_INTERVAL } from "@/app/(domain)/app/config";
 import { TrackContext, SpotifyClientContext, ActionContext, PlaybackSyncContext, PlaylistContext } from "@/app/(domain)/app/context";
 import { getTracksPlaylists } from "@/app/(domain)/spotify/library";
-import { useEffect, useContext, useState, use, useRef, useCallback } from "react";
+import { useEffect, useContext, useState, useRef, useCallback } from "react";
 import { AddToLibraryIcon, RefreshIcon, SavedToLibraryIcon } from "../../icons";
 
 
@@ -27,7 +27,7 @@ function RefreshControlIcon() {
     const rotationTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
     useEffect(() => {
         if (playbackSyncState.state.state === 'playback')
-            setRotationAngle(rotationAngle - 180);
+            setRotationAngle((value) => value - 180);
 
         const tryResolveRefresh = () => {
             if (rotationTimeout.current)
@@ -51,7 +51,7 @@ function RefreshControlIcon() {
         if (isDisabled) return;
         actions?.requestUpdate();
         setIsDisabled(true);
-        setRotationAngle(rotationAngle - 180);
+        setRotationAngle((value) => value - 180);
     }, [actions, isDisabled]);
 
 
@@ -64,7 +64,7 @@ function RefreshControlIcon() {
     };
 
     return (
-        <div className={"refreshIcon "} onClick={handleRefreshClick} title={actionName} style={rotationStyle}>
+        <div className={"refreshIcon "} data-testid="spotify-refresh-now-playing" onClick={handleRefreshClick} title={actionName} aria-label={actionName} style={rotationStyle}>
             <RefreshIcon />
         </div>
     );
@@ -83,7 +83,7 @@ function LibraryControlIcon() {
     const icon = isInLibrary ? <SavedToLibraryIcon /> : <AddToLibraryIcon />;
 
     return (
-        <div className="libraryIcon" title={hoverText}>
+        <div className="libraryIcon" data-testid="spotify-library-state" title={hoverText} aria-label={hoverText}>
             {icon}
         </div>
     );

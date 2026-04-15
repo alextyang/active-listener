@@ -1,10 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { useContext } from "react";
 import { CompleteArticle } from "@/app/(domain)/app/types";
 import { ArticleContext, TrackContext } from "@/app/(domain)/app/context";
-import { getRelevanceToken, getArticleNumber, getTimeToRead, getArticleTextGradient, getArticleBackgroundGradient } from "@/app/(domain)/app/articles/articles";
-import { ARTICLE_IMAGE_SIZES } from "@/app/(domain)/app/config";
+import { getRelevanceToken, getArticleNumber, getTimeToRead, getArticleTextGradient, getArticleBackgroundGradient } from "@/app/(domain)/app/articles/helpers";
 
 export function ArticleList() {
     const articles = useContext(ArticleContext).articles;
@@ -65,7 +63,8 @@ export function ArticleCard({ article, index }: { article: CompleteArticle, inde
                         <p className="linkTitle">{articleTitle}</p>
                         <div className="imageWrapper" >
                             {hasImage ?
-                                <Image src={article?.image ?? ''} style={backgroundStyles} alt='' fill sizes={ARTICLE_IMAGE_SIZES} className={'image'}></Image>
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={article?.image ?? ''} style={backgroundStyles} alt='' className={'image'} />
                                 : <div className="placeholder" style={backgroundStyles}></div>
                             }
                         </div>
